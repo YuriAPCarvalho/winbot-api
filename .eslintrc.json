@@ -35,7 +35,7 @@
     ],
     "quotes": [
       1,
-      "double",
+      "single",
       {
         "avoidEscape": true
       }
