@@ -43,62 +43,7 @@ const SendMail = async (email: string, tokenSenha: string) => {
           from: userSmtp,
           to: email,
           subject: 'Redefinição de Senha - W I N B O T',
-          html: `<!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="UTF-8" />
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                    <title>Document</title>
-                </head>
-                <style>
-                    .logoArea{
-                    
-                    display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        background-color: white;
-                }
-                .container{
-                font-family: 'Roboto', sans-serif; display: flex;
-                justify-content: center;
-                align-items: center;
-                flex-direction: column;
-                background-color:white;
-                border-style:solid;
-                border-width:2px;
-                border-color:#c1c1c1;
-                border-radius:20px;
-                padding:10px;
-                }
-                .infoArea{
-                padding-left: 10%; 
-                }
-
-                .a{
-                color:blue;
-                }
-                </style>
-                <body class="container">
-                    <section
-                    
-                    class="logoArea"
-                    
-                    >
-                    <img
-                        src="https://app.winbot.ai/static/media/logo.f64f8b1b.png"
-                        width="70%"
-                        
-                    />
-                    </section>
-                    <main style="">
-                    <h4>Olá  ${userData?.name},</h4>
-                    <p>você acaba de solicitar a recuperação de senha da sua conta,</p>
-                    <p>para prosseguir basta acessar o link <a href="${urlSistema}/resetpsw?hash=${tokenSenha}&email=${userData?.email}" >Alterar senha</p>
-                    </main>
-                    <section></section>
-                </body>
-                </html>
-            `
+          html: EmailBody(userData, urlSistema, tokenSenha)
         };
         const info = await transporter.sendMail(mailOptions);
         console.log('E-mail enviado: ' + info.response);
