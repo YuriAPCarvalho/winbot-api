@@ -10,5 +10,11 @@ module.exports = {
   database: process.env.DB_NAME,
   username: process.env.DB_USER,
   password: process.env.DB_PASS,
-  logging: process.env.DB_DEBUG === 'true'
+  logging: process.env.DB_DEBUG === 'true',
+  pool: {
+    max: 10,
+    min: 0,
+    acquire: 60000,
+    idle: 10000
+  }
 };
