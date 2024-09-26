@@ -28,7 +28,6 @@ app.use(bodyParser.json({ limit: '10mb' }));
 
 app.use(
   cors({
-    credentials: true,
     origin: '*'
   })
 );
