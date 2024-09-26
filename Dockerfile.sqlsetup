@@ -20,4 +20,4 @@ COPY . .
 
 CMD ["sh", "-c", "npm run db:migrate && npm run start"]
 
-EXPOSE 4000
+EXPOSE 4001
