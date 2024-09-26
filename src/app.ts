@@ -26,11 +26,7 @@ app.set('queues', {
 const bodyparser = require('body-parser');
 app.use(bodyParser.json({ limit: '10mb' }));
 
-app.use(
-  cors({
-    origin: '*'
-  })
-);
+app.use(cors());
 app.use(cookieParser());
 app.use(express.json());
 app.use(Sentry.Handlers.requestHandler());
