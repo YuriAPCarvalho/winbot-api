@@ -1,7 +1,23 @@
 FROM node:20 as builder
-RUN echo "Instalando backend para rodar migrations. . ."
+
 WORKDIR /app
-COPY . .
+
+COPY package*.json ./
+
 RUN npm install
+
+COPY . .
+
 RUN npm run build
-ENTRYPOINT [ "npm", "run", "db:migrate" ,"&&", "npm", "run", "db:seed" ]
+
+FROM node:20 as production
+
+WORKDIR /app
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY . .
+
+CMD ["sh", "-c", "npm run db:migrate && npm run db:seed"]
+
+EXPOSE 4000
