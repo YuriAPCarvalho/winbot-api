@@ -1,30 +1,97 @@
-import { Request, Response } from "express";
-import express from "express";
-import * as Yup from "yup";
-import Gerencianet from "gn-api-sdk-typescript";
-import AppError from "../errors/AppError";
+import { Request, Response } from 'express';
+import express from 'express';
+import * as Yup from 'yup';
+import Gerencianet from 'gn-api-sdk-typescript';
+import AppError from '../errors/AppError';
 
-import options from "../config/Gn";
-import Company from "../models/Company";
-import Invoices from "../models/Invoices";
-import Subscriptions from "../models/Subscriptions";
-import { getIO } from "../libs/socket";
-import UpdateUserService from "../services/UserServices/UpdateUserService";
+import options from '../config/Gn';
+import Company from '../models/Company';
+import Invoices from '../models/Invoices';
+import Subscriptions from '../models/Subscriptions';
+import { getIO } from '../libs/socket';
+import UpdateUserService from '../services/UserServices/UpdateUserService';
 
 const app = express();
-
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
   const gerencianet = Gerencianet(options);
   return res.json(gerencianet.getSubscriptions());
 };
 
+export const createCardSubscription = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  const gerencianet = Gerencianet(options);
+
+  // const {installments, payment_token,
+
+  // } = req.body;
+
+  const body = {
+    payment: {
+      credit_card: {
+        installments: 1,
+        payment_token: 'bafcb117dec095397428c9124b96599f4acf54e0',
+        billing_address: {
+          street: 'Street 3',
+          number: 10,
+          neighborhood: 'Bauxita',
+          zipcode: '35400000',
+          city: 'Ouro Preto',
+          state: 'MG'
+        },
+        customer: {
+          name: 'Gorbadoc Oldbuck',
+          email: 'oldbuck@gerencianet.com.br',
+          cpf: '',
+          birth: '1977-01-15',
+          phone_number: '5144916523'
+        }
+      }
+    },
+
+    items: [
+      {
+        name: 'Product 1',
+        value: 1000,
+        amount: 2
+      }
+    ],
+    shippings: [
+      {
+        name: 'Default Shipping Cost',
+        value: 100
+      }
+    ]
+  };
+
+  gerencianet
+    .oneStep([], body)
+    .then((resposta: any) => {
+      console.log(resposta);
+      return res.json({
+        resposta
+      });
+    })
+    .catch((error: any) => {
+      console.log('erro rota cartao');
+
+      console.log(error);
+
+      return res.json({
+        error
+      });
+    })
+    .done();
+};
+
 export const createSubscription = async (
   req: Request,
   res: Response
-  ): Promise<Response> => {
-    const gerencianet = Gerencianet(options);
-    const { companyId } = req.user;
+): Promise<Response> => {
+  const gerencianet = Gerencianet(options);
+  const { companyId } = req.user;
 
   const schema = Yup.object().shape({
     price: Yup.string().required(),
@@ -33,7 +100,7 @@ export const createSubscription = async (
   });
 
   if (!(await schema.isValid(req.body))) {
-    throw new AppError("Validation fails", 400);
+    throw new AppError('Validation fails', 400);
   }
 
   const {
@@ -55,11 +122,13 @@ export const createSubscription = async (
       expiracao: 3600
     },
     valor: {
-      original: price.toLocaleString("pt-br", { minimumFractionDigits: 2 }).replace(",", ".")
+      original: price
+        .toLocaleString('pt-br', { minimumFractionDigits: 2 })
+        .replace(',', '.')
     },
     chave: process.env.GERENCIANET_PIX_KEY,
     solicitacaoPagador: `#Fatura:${invoiceId}`
-    };
+  };
   try {
     const pix = await gerencianet.pixCreateImmediateCharge(null, body);
 
@@ -70,11 +139,10 @@ export const createSubscription = async (
     const updateCompany = await Company.findOne();
 
     if (!updateCompany) {
-      throw new AppError("Company not found", 404);
+      throw new AppError('Company not found', 404);
     }
 
-
-/*     await Subscriptions.create({
+    /*     await Subscriptions.create({
       companyId,
       isActive: false,
       userPriceCents: users,
@@ -85,7 +153,7 @@ export const createSubscription = async (
       expiresAt: new Date()
     }); */
 
-/*     const { id } = req.user;
+    /*     const { id } = req.user;
     const userData = {};
     const userId = id;
     const requestUserId = parseInt(id);
@@ -97,14 +165,12 @@ export const createSubscription = async (
           user
         }); */
 
-
     return res.json({
       ...pix,
-      qrcode,
-
+      qrcode
     });
   } catch (error) {
-    throw new AppError("Validation fails", 400);
+    throw new AppError('Validation fails', 400);
   }
 };
 
@@ -118,7 +184,7 @@ export const createWebhook = async (
   });
 
   if (!(await schema.isValid(req.body))) {
-    throw new AppError("Validation fails", 400);
+    throw new AppError('Validation fails', 400);
   }
 
   const { chave, url } = req.body;
@@ -143,10 +209,10 @@ export const createWebhook = async (
 export const webhook = async (
   req: Request,
   res: Response
-  ): Promise<Response> => {
+): Promise<Response> => {
   const { type } = req.params;
   const { evento } = req.body;
-  if (evento === "teste_webhook") {
+  if (evento === 'teste_webhook') {
     return res.json({ ok: true });
   }
   if (req.body.pix) {
@@ -156,22 +222,22 @@ export const webhook = async (
         txid: pix.txid
       });
 
-      if (detahe.status === "CONCLUIDA") {
+      if (detahe.status === 'CONCLUIDA') {
         const { solicitacaoPagador } = detahe;
-        const invoiceID = solicitacaoPagador.replace("#Fatura:", "");
+        const invoiceID = solicitacaoPagador.replace('#Fatura:', '');
         const invoices = await Invoices.findByPk(invoiceID);
-        const companyId =invoices.companyId;
+        const companyId = invoices.companyId;
         const company = await Company.findByPk(companyId);
 
         const expiresAt = new Date(company.dueDate);
         expiresAt.setDate(expiresAt.getDate() + 30);
-        const date = expiresAt.toISOString().split("T")[0];
+        const date = expiresAt.toISOString().split('T')[0];
 
         if (company) {
           await company.update({
             dueDate: date
           });
-         const invoi = await invoices.update({
+          const invoi = await invoices.update({
             id: invoiceID,
             status: 'paid'
           });
@@ -183,15 +249,16 @@ export const webhook = async (
             }
           });
 
-          io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-payment`, {
-            action: detahe.status,
-            company: companyUpdate
-          });
+          io.to(`company-${companyId}-mainchannel`).emit(
+            `company-${companyId}-payment`,
+            {
+              action: detahe.status,
+              company: companyUpdate
+            }
+          );
         }
-
       }
     });
-
   }
 
   return res.json({ ok: true });
