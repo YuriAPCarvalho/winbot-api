@@ -18,7 +18,7 @@ interface PlanData {
   useKanban?: boolean;
   useOpenAi?: boolean;
   useIntegrations?: boolean;
-  bankPlanID: number;
+  bankPlanID?: number;
 }
 
 interface BankPlan {

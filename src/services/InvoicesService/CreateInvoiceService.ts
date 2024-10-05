@@ -16,7 +16,7 @@ const CreateInvoiceService = async (data: IInvoice): Promise<Invoices> => {
     if (invoices.length > 0) {
       await UpdateInvoiceService({
         id: invoices[invoices.length - 1].id,
-        status: 'PAGO'
+        status: 'paid'
       });
     }
 

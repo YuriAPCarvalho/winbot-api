@@ -1,15 +1,15 @@
-import * as Yup from "yup";
-import { Request, Response } from "express";
+import * as Yup from 'yup';
+import { Request, Response } from 'express';
 // import { getIO } from "../libs/socket";
-import AppError from "../errors/AppError";
-import Plan from "../models/Plan";
+import AppError from '../errors/AppError';
+import Plan from '../models/Plan';
 
-import ListPlansService from "../services/PlanService/ListPlansService";
-import CreatePlanService from "../services/PlanService/CreatePlanService";
-import UpdatePlanService from "../services/PlanService/UpdatePlanService";
-import ShowPlanService from "../services/PlanService/ShowPlanService";
-import FindAllPlanService from "../services/PlanService/FindAllPlanService";
-import DeletePlanService from "../services/PlanService/DeletePlanService";
+import ListPlansService from '../services/PlanService/ListPlansService';
+import CreatePlanService from '../services/PlanService/CreatePlanService';
+import UpdatePlanService from '../services/PlanService/UpdatePlanService';
+import ShowPlanService from '../services/PlanService/ShowPlanService';
+import FindAllPlanService from '../services/PlanService/FindAllPlanService';
+import DeletePlanService from '../services/PlanService/DeletePlanService';
 
 type IndexQuery = {
   searchParam: string;
@@ -29,6 +29,7 @@ type StorePlanData = {
   useExternalApi?: boolean;
   useKanban?: boolean;
   useOpenAi?: boolean;
+  bankPlanID?: number;
   useIntegrations?: boolean;
 };
 
