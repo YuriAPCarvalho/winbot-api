@@ -8,7 +8,7 @@ import {
   AutoIncrement,
   AllowNull,
   Unique
-} from "sequelize-typescript";
+} from 'sequelize-typescript';
 
 @Table
 class Plan extends Model<Plan> {
@@ -41,16 +41,16 @@ class Plan extends Model<Plan> {
   updatedAt: Date;
 
   @Column
-  useSchedules: boolean;   
+  useSchedules: boolean;
 
   @Column
-  useCampaigns: boolean; 
-  
+  useCampaigns: boolean;
+
   @Column
-  useInternalChat: boolean;   
-  
+  useInternalChat: boolean;
+
   @Column
-  useExternalApi: boolean;   
+  useExternalApi: boolean;
 
   @Column
   useKanban: boolean;
@@ -60,6 +60,9 @@ class Plan extends Model<Plan> {
 
   @Column
   useIntegrations: boolean;
+
+  @Column
+  bankPlanID: number;
 }
 
 export default Plan;
