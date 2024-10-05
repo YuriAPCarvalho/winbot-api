@@ -4,7 +4,7 @@ import Announcement from '../../models/Announcement';
 import ChargeInfo from '../../models/ChargeInfo';
 import { IChargeInfo } from './IChargeInfo';
 
-const CreateService = async (data: IChargeInfo): Promise<ChargeInfo> => {
+const CreateChargeService = async (data: IChargeInfo): Promise<ChargeInfo> => {
   try {
     const record = await ChargeInfo.create(data);
 
@@ -14,4 +14,4 @@ const CreateService = async (data: IChargeInfo): Promise<ChargeInfo> => {
   }
 };
 
-export default CreateService;
+export default CreateChargeService;

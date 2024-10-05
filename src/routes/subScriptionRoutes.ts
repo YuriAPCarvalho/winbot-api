@@ -11,7 +11,12 @@ subscriptionRoutes.post(
 );
 subscriptionRoutes.post(
   '/cardsubscription',
-  SubscriptionController.createCardSubscription
+  SubscriptionController.createCardSubscriptionPlan
+);
+
+subscriptionRoutes.post(
+  '/cardsubscription/token',
+  SubscriptionController.getEFIToken
 );
 
 subscriptionRoutes.post(

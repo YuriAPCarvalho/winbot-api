@@ -47,6 +47,10 @@ class ChargeInfo extends Model<ChargeInfo> {
   @Column
   number: number;
 
+  @AllowNull(true)
+  @Column
+  subscriptionID: number;
+
   @Column
   neighborhood: string;
 

@@ -1,9 +1,9 @@
-import AppError from "../../errors/AppError";
-import Company from "../../models/Company";
-import Setting from "../../models/Setting";
+import AppError from '../../errors/AppError';
+import Company from '../../models/Company';
+import Setting from '../../models/Setting';
 
 interface CompanyData {
-  name: string;
+  name?: string;
   id?: number | string;
   phone?: string;
   email?: string;
@@ -18,6 +18,9 @@ const UpdateCompanyService = async (
   companyData: CompanyData
 ): Promise<Company> => {
   const company = await Company.findByPk(companyData.id);
+
+  console.log(company);
+
   const {
     name,
     phone,
@@ -30,7 +33,7 @@ const UpdateCompanyService = async (
   } = companyData;
 
   if (!company) {
-    throw new AppError("ERR_NO_COMPANY_FOUND", 404);
+    throw new AppError('ERR_NO_COMPANY_FOUND', 404);
   }
 
   await company.update({
@@ -47,11 +50,11 @@ const UpdateCompanyService = async (
     const [setting, created] = await Setting.findOrCreate({
       where: {
         companyId: company.id,
-        key: "campaignsEnabled"
+        key: 'campaignsEnabled'
       },
       defaults: {
         companyId: company.id,
-        key: "campaignsEnabled",
+        key: 'campaignsEnabled',
         value: `${campaignsEnabled}`
       }
     });

@@ -3,13 +3,15 @@ import express from 'express';
 import * as Yup from 'yup';
 import Gerencianet from 'gn-api-sdk-typescript';
 import AppError from '../errors/AppError';
-
 import options from '../config/Gn';
 import Company from '../models/Company';
 import Invoices from '../models/Invoices';
 import Subscriptions from '../models/Subscriptions';
 import { getIO } from '../libs/socket';
-import UpdateUserService from '../services/UserServices/UpdateUserService';
+import axios from 'axios';
+import updateChargeService from '../services/ChargeInfoService/UpdateChargeService';
+import UpdateCompanyService from '../services/CompanyService/UpdateCompanyService';
+import CreateInvoiceService from '../services/InvoicesService/CreateInvoiceService';
 
 const app = express();
 
@@ -18,72 +20,204 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   return res.json(gerencianet.getSubscriptions());
 };
 
-export const createCardSubscription = async (
+export const getEFIToken = async () => {
+  //Insira os valores de suas credenciais em desenvolvimento do pix
+  var credenciais = {
+    client_id: process.env.GERENCIANET_APICARD_CLIENT_ID,
+    client_secret: process.env.GERENCIANET_APICARD_CLIENT_SECRET
+  };
+
+  var data = JSON.stringify({ grant_type: 'client_credentials' });
+  var data_credentials =
+    credenciais.client_id + ':' + credenciais.client_secret;
+
+  var auth = Buffer.from(data_credentials).toString('base64');
+
+  var config = {
+    method: 'POST',
+    url: process.env.EFIAPI_URL + '/v1/authorize',
+    headers: {
+      Authorization: 'Basic ' + auth,
+      'Content-Type': 'application/json'
+    },
+    data: data
+  };
+
+  return await axios(config)
+    .then(function (response) {
+      return response.data;
+    })
+    .catch(function (error) {
+      return error;
+    });
+};
+
+export const getSubscription = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const accessToken = await getEFIToken();
+
+  // Configuração da requisição
+  const config = {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    }
+  };
+
+  let { id } = req.params;
+
+  return await axios
+    .get(process.env.EFIAPI_URL + '/v1/subscription/' + id, config)
+    .then(response => {
+      return res.send(response.data);
+    })
+    .catch(err => {
+      return res.send(err);
+    });
+};
+
+function newDueDate() {
+  const today = new Date();
+  const nextDate = new Date(today);
+
+  nextDate.setDate(today.getDate() + 30);
+
+  return nextDate.toDateString();
+}
+
+export const createCardSubscriptionPlan = async (
   req: Request,
   res: Response
 ): Promise<any> => {
   const gerencianet = Gerencianet(options);
+  console.log(req.body);
 
-  // const {installments, payment_token,
-
-  // } = req.body;
+  const {
+    planID,
+    planName,
+    planValue,
+    payment_token,
+    street,
+    number,
+    neighborhood,
+    zipcode,
+    city,
+    state,
+    name,
+    email,
+    cpf,
+    birth,
+    phone_number,
+    id,
+    cardNumber,
+    cardDate,
+    cardFlag,
+    companyId
+  } = req.body;
 
   const body = {
-    payment: {
-      credit_card: {
-        installments: 1,
-        payment_token: 'bafcb117dec095397428c9124b96599f4acf54e0',
-        billing_address: {
-          street: 'Street 3',
-          number: 10,
-          neighborhood: 'Bauxita',
-          zipcode: '35400000',
-          city: 'Ouro Preto',
-          state: 'MG'
-        },
-        customer: {
-          name: 'Gorbadoc Oldbuck',
-          email: 'oldbuck@gerencianet.com.br',
-          cpf: '',
-          birth: '1977-01-15',
-          phone_number: '5144916523'
-        }
-      }
-    },
-
     items: [
       {
-        name: 'Product 1',
-        value: 1000,
-        amount: 2
+        name: planName,
+        value: planValue * 1000,
+        amount: 1
       }
     ],
-    shippings: [
-      {
-        name: 'Default Shipping Cost',
-        value: 100
+    payment: {
+      credit_card: {
+        payment_token,
+        billing_address: {
+          street,
+          number,
+          neighborhood,
+          zipcode,
+          city,
+          state
+        },
+        customer: {
+          name,
+          email,
+          cpf,
+          birth,
+          phone_number
+        }
       }
-    ]
+    }
   };
 
-  gerencianet
-    .oneStep([], body)
-    .then((resposta: any) => {
-      console.log(resposta);
-      return res.json({
-        resposta
-      });
-    })
-    .catch((error: any) => {
-      console.log('erro rota cartao');
+  const { access_token } = await getEFIToken();
 
-      console.log(error);
+  // Configuração da requisição
+  const config = {
+    headers: {
+      Authorization: `Bearer ${access_token}`,
+      'Content-Type': 'application/json'
+    }
+  };
 
-      return res.json({
-        error
+  console.log(config);
+
+  return await axios
+    .post(
+      `${process.env.EFIAPI_URL}/v1/plan/${planID}/subscription/one-step`,
+      body,
+      config
+    )
+    .then(async response => {
+      console.log(response.data);
+
+      await updateChargeService({
+        id: id,
+        cardNumber,
+        cardDate,
+        cardFlag,
+        subscriptionID: response.data.data.subscription_id
       });
+
+      setTimeout(async () => {
+        await axios
+          .get(
+            process.env.EFIAPI_URL +
+              '/v1/subscription/' +
+              response.data.data.subscription_id,
+            config
+          )
+          .then(response => {
+            console.log(response.data.data);
+
+            if (
+              ['paid', 'approved', 'identified', 'waiting'].some(
+                v =>
+                  v ==
+                  response.data.data.history[
+                    response.data.data.history.length - 1
+                  ].status
+              )
+            ) {
+              Promise.all([
+                UpdateCompanyService({ id: companyId, dueDate: newDueDate() }),
+                CreateInvoiceService({
+                  detail: planName,
+                  status: 'open',
+                  value: planValue,
+                  dueDate: newDueDate(),
+                  companyId
+                })
+              ]);
+            }
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      }, 30000);
+      return res.status(200).send(response.data);
     })
-    .done();
+    .catch(error => {
+      console.error('Erro ao fazer requisição:', error);
+      return res.status(400).send(error.error);
+    });
 };
 
 export const createSubscription = async (
@@ -141,29 +275,6 @@ export const createSubscription = async (
     if (!updateCompany) {
       throw new AppError('Company not found', 404);
     }
-
-    /*     await Subscriptions.create({
-      companyId,
-      isActive: false,
-      userPriceCents: users,
-      whatsPriceCents: connections,
-      lastInvoiceUrl: pix.location,
-      lastPlanChange: new Date(),
-      providerSubscriptionId: pix.loc.id,
-      expiresAt: new Date()
-    }); */
-
-    /*     const { id } = req.user;
-    const userData = {};
-    const userId = id;
-    const requestUserId = parseInt(id);
-    const user = await UpdateUserService({ userData, userId, companyId, requestUserId }); */
-
-    /*     const io = getIO();
-        io.emit("user", {
-          action: "update",
-          user
-        }); */
 
     return res.json({
       ...pix,
