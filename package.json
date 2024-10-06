@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "start": "nodemon dist/server.js",
+    "start": "env-cmd -f .env nodemon dist/server.js",
     "dev:server": "env-cmd -f .env.hom ts-node-dev --respawn --transpile-only --ignore node_modules src/server.ts",
     "db:migrate": "env-cmd -f .env npx sequelize-cli db:migrate",
     "db:seed": "env-cmd -f .env sequelize db:seed:all",
