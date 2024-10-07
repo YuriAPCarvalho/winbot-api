@@ -11,7 +11,14 @@ import { getIO } from '../libs/socket';
 import axios from 'axios';
 import updateChargeService from '../services/ChargeInfoService/UpdateChargeService';
 import UpdateCompanyService from '../services/CompanyService/UpdateCompanyService';
+import CancelLastInvoice from '../services/InvoicesService/CreateInvoiceService';
+import { DeleteByCompany } from '../services/ChargeInfoService/DeleteChargeInfo';
 import CreateInvoiceService from '../services/InvoicesService/CreateInvoiceService';
+import CalcelLastInvoice from '../services/InvoicesService/CancelLastInvoice';
+import ShowCompanyService from '../services/CompanyService/ShowCompanyService';
+import { FindByCompany } from '../services/ChargeInfoService/FindChargeService';
+import ChargeInfo from '../models/ChargeInfo';
+import efiAPI from '../efiAPI';
 
 const app = express();
 
@@ -217,6 +224,36 @@ export const createCardSubscriptionPlan = async (
     .catch(error => {
       console.error('Erro ao fazer requisição:', error);
       return res.status(400).send(error.error);
+    });
+};
+
+export const cardUnsubscription = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { id, companyId } = req.user;
+
+  let chargeinfo = await FindByCompany(companyId.toString());
+
+  await FindByCompany(companyId.toString()).then(async res => {
+    console.log(res);
+
+    await efiAPI.put(
+      `/v1/subscription/${res[res.length - 1]?.subscriptionID}/cancel`
+    );
+  });
+
+  return await Promise.all([
+    UpdateCompanyService({ id: companyId, dueDate: new Date().toDateString() }),
+    DeleteByCompany(companyId.toString()),
+    CalcelLastInvoice(companyId)
+  ])
+    .then(response => {
+      return res.status(200).send('Plano cancelado com sucesso');
+    })
+    .catch(err => {
+      console.log(err);
+      throw err;
     });
 };
 

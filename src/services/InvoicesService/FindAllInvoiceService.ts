@@ -1,17 +1,19 @@
-import Invoices from "../../models/Invoices";
+import Invoices from '../../models/Invoices';
 
 interface Request {
   companyId: number;
 }
 
-const FindAllPlanService = async (companyId: number): Promise<Invoices[]> => {
+const FindAllInvoiceService = async (
+  companyId: number
+): Promise<Invoices[]> => {
   const invoice = await Invoices.findAll({
     where: {
       companyId
-    }, 
-    order: [["id", "ASC"]]
+    },
+    order: [['id', 'ASC']]
   });
   return invoice;
 };
 
-export default FindAllPlanService;
+export default FindAllInvoiceService;

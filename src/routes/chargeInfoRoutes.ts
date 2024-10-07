@@ -5,6 +5,11 @@ import * as ChargeInfoController from '../controllers/ChargeInfoController';
 
 const chargeInfoRoutes = express.Router();
 chargeInfoRoutes.post('/chargeinfo', ChargeInfoController.store);
+chargeInfoRoutes.delete(
+  '/chargeinfo/:companyid',
+  ChargeInfoController.deleteCharge
+);
+
 chargeInfoRoutes.put('/chargeinfo', ChargeInfoController.update);
 chargeInfoRoutes.get(
   '/chargeinfo/:companyid',

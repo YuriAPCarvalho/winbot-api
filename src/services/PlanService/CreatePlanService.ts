@@ -2,6 +2,7 @@ import * as Yup from 'yup';
 import AppError from '../../errors/AppError';
 import Plan from '../../models/Plan';
 import Gerencianet from 'gn-api-sdk-typescript';
+import efiAPI from '../../efiAPI';
 
 import options from '../../config/Gn';
 
@@ -11,6 +12,7 @@ interface PlanData {
   connections: number;
   queues: number;
   value: number;
+  term: string;
   useCampaigns?: boolean;
   useSchedules?: boolean;
   useInternalChat?: boolean;
@@ -27,23 +29,38 @@ interface BankPlan {
   interval: number;
 }
 
-const CreateBankPlan = (name: string): any => {
+const CreateBankPlan = async (
+  name: string,
+  termInMonths: number
+): Promise<any> => {
   const gerencianet = Gerencianet(options);
 
-  gerencianet
-    .createPlan({}, { name: name, repeats: 12, interval: 1 })
-    .then(async (resposta: any) => {
-      console.log(resposta);
-      return await resposta.json()?.data;
+  return await efiAPI
+    .post('/v1/plan', { name: name, repeats: 12, interval: termInMonths })
+    .then(async (response: any) => {
+      console.log(response.data.data);
+      return response.data.data.plan_id;
     })
     .catch((error: any) => {
       console.log(error);
-    })
-    .done();
+      return error;
+    });
+
+  // await gerencianet
+  //   .createPlan({}, { name: name, repeats: 12, interval: 1 })
+  //   .then((resposta: any) => {
+  //     console.log(resposta);
+  //     return resposta.data;
+  //   })
+  //   .catch((error: any) => {
+  //     console.log(error);
+  //     return error;
+  //   })
+  //   .done();
 };
 
 const CreatePlanService = async (planData: PlanData): Promise<Plan> => {
-  const { name } = planData;
+  const { name, term } = planData;
 
   const planSchema = Yup.object().shape({
     name: Yup.string()
@@ -65,10 +82,13 @@ const CreatePlanService = async (planData: PlanData): Promise<Plan> => {
       )
   });
 
+  let bankPlan;
   try {
     await planSchema.validate({ name });
-    let bankPlan = await CreateBankPlan(name);
-    planData.bankPlanID = bankPlan.plan_id;
+    let termInMonths = term == 'MENSAL' ? 1 : 12;
+    bankPlan = await CreateBankPlan(name, termInMonths);
+    console.log(bankPlan);
+    planData.bankPlanID = bankPlan;
   } catch (err) {
     throw new AppError(err.message);
   }

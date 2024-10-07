@@ -15,6 +15,12 @@ subscriptionRoutes.post(
 );
 
 subscriptionRoutes.post(
+  '/cardunsubscription',
+  isAuth,
+  SubscriptionController.cardUnsubscription
+);
+
+subscriptionRoutes.post(
   '/cardsubscription/token',
   SubscriptionController.getEFIToken
 );

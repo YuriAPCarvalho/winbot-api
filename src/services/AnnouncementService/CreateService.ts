@@ -1,6 +1,6 @@
-import * as Yup from "yup";
-import AppError from "../../errors/AppError";
-import Announcement from "../../models/Announcement";
+import * as Yup from 'yup';
+import AppError from '../../errors/AppError';
+import Announcement from '../../models/Announcement';
 
 interface Data {
   priority: string;
@@ -14,8 +14,8 @@ const CreateService = async (data: Data): Promise<Announcement> => {
   const { title, text } = data;
 
   const ticketnoteSchema = Yup.object().shape({
-    title: Yup.string().required("ERR_ANNOUNCEMENT_REQUIRED"),
-    text: Yup.string().required("ERR_ANNOUNCEMENT_REQUIRED")
+    title: Yup.string().required('ERR_ANNOUNCEMENT_REQUIRED'),
+    text: Yup.string().required('ERR_ANNOUNCEMENT_REQUIRED')
   });
 
   try {
