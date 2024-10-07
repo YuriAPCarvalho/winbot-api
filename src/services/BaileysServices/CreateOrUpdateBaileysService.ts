@@ -1,6 +1,6 @@
-import { Chat, Contact } from "@whiskeysockets/baileys";
-import Baileys from "../../models/Baileys";
-import { isArray } from "lodash";
+import { Chat, Contact } from '@whiskeysockets/baileys';
+import Baileys from '../../models/Baileys';
+import { isArray } from 'lodash';
 
 interface Request {
   whatsappId: number;

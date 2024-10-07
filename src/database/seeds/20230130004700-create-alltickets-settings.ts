@@ -1,13 +1,13 @@
-import { QueryInterface } from "sequelize";
+const { DataTypes } = require('sequelize');
 
 module.exports = {
-  up: (queryInterface: QueryInterface) => {
+  up: queryInterface => {
     return queryInterface.bulkInsert(
-      "Settings",
+      'Settings',
       [
         {
-          key: "allTicket",
-          value: "disabled",
+          key: 'allTicket',
+          value: 'disabled',
           createdAt: new Date(),
           updatedAt: new Date()
         }
@@ -16,7 +16,7 @@ module.exports = {
     );
   },
 
-  down: (queryInterface: QueryInterface) => {
-    return queryInterface.bulkDelete("Settings", {});
+  down: queryInterface => {
+    return queryInterface.bulkDelete('Settings', {});
   }
 };
