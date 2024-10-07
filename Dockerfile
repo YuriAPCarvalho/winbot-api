@@ -10,7 +10,7 @@ COPY . .
 
 RUN npm run build
 
-FROM node:20 as production
+FROM node:18 as production
 
 WORKDIR /app
 
