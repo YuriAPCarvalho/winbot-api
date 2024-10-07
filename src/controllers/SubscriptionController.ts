@@ -141,7 +141,8 @@ export const createCardSubscriptionPlan = async (
           neighborhood,
           zipcode,
           city,
-          state
+          state,
+          complemento: ''
         },
         customer: {
           name,
@@ -155,26 +156,37 @@ export const createCardSubscriptionPlan = async (
   };
 
   return await efiAPI
-    .post(`/v1/plan/${planID}/subscription/one-step`, body)
+    .post(`/v1/plan/${planID}/subscription/one-step`, body.payment)
     .then(async response => {
       console.log(response.data);
 
+      let subsID = response.data.data.subscription_id;
       await updateChargeService({
         id: id,
         cardNumber,
         cardDate,
         cardFlag,
-        subscriptionID: response.data.data.subscription_id
+        companyId,
+        subscriptionID: subsID
       });
+
+      await efiAPI
+        .post(`/v1/subscription/${subsID}`, body.payment)
+        .then()
+        .catch(err => {
+          console.log(err);
+
+          throw err;
+        });
 
       setTimeout(async () => {
         await efiAPI
-          .get('/v1/subscription/' + response.data.data.subscription_id)
+          .get('/v1/subscription/' + subsID)
           .then(response => {
             console.log(response.data.data);
 
             if (
-              ['paid', 'approved', 'identified', 'waiting'].some(
+              ['paid', 'approved'].some(
                 v =>
                   v ==
                   response.data.data.history[
@@ -192,6 +204,8 @@ export const createCardSubscriptionPlan = async (
                   companyId
                 })
               ]);
+            } else {
+              res.status(400).send('O pagamento não foi efetuado!');
             }
           })
           .catch(err => {
