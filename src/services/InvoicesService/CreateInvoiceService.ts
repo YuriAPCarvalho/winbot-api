@@ -3,7 +3,7 @@ import AppError from '../../errors/AppError';
 import Announcement from '../../models/Announcement';
 import ChargeInfo from '../../models/ChargeInfo';
 import Invoices from '../../models/Invoices';
-import FindAllPlanService from './FindAllInvoiceService';
+import FindAllInvoiceService from './FindAllInvoiceService';
 import UpdateInvoiceService from './UpdateInvoiceService';
 import { IInvoice } from './IInvoice';
 
@@ -11,7 +11,7 @@ const CreateInvoiceService = async (data: IInvoice): Promise<Invoices> => {
   try {
     const { companyId } = data;
 
-    var invoices = await FindAllPlanService(companyId);
+    var invoices = await FindAllInvoiceService(companyId);
 
     if (invoices.length > 0) {
       await UpdateInvoiceService({

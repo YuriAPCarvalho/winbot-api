@@ -34,6 +34,9 @@ class Plan extends Model<Plan> {
   @Column
   value: number;
 
+  @Column
+  term: string;
+
   @CreatedAt
   createdAt: Date;
 

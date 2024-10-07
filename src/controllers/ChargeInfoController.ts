@@ -5,6 +5,7 @@ import { FindByCompany } from '../services/ChargeInfoService/FindChargeService';
 
 import { Request, Response } from 'express';
 import { IChargeInfo } from '../services/ChargeInfoService/IChargeInfo';
+import { DeleteByCompany } from '../services/ChargeInfoService/DeleteChargeInfo';
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
   console.log(req.body);
@@ -13,6 +14,21 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
   try {
     return res.status(200).json(await CreateChargeService(newCompany));
+  } catch (err: any) {
+    res.status(400).json(err);
+
+    throw new AppError(err.message);
+  }
+};
+
+export const deleteCharge = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { companyid } = req.params;
+
+  try {
+    return res.status(200).json(await DeleteByCompany(companyid));
   } catch (err: any) {
     res.status(400).json(err);
 

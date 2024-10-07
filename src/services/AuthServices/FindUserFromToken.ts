@@ -1,7 +1,7 @@
-import { verify } from "jsonwebtoken";
-import ShowUserService from "../UserServices/ShowUserService";
-import authConfig from "../../config/auth";
-import User from "../../models/User";
+import { verify } from 'jsonwebtoken';
+import ShowUserService from '../UserServices/ShowUserService';
+import authConfig from '../../config/auth';
+import User from '../../models/User';
 
 interface RefreshTokenPayload {
   id: string;

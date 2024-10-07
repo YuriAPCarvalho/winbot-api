@@ -31,6 +31,7 @@ type StorePlanData = {
   useOpenAi?: boolean;
   bankPlanID?: number;
   useIntegrations?: boolean;
+  term: string;
 };
 
 type UpdatePlanData = {
