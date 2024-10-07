@@ -29,7 +29,7 @@ app.use(bodyParser.json({ limit: '10mb' }));
 app.use(
   cors({
     credentials: true,
-    origin: '*'
+    origin: 'http://154.38.180.13:3001'
   })
 );
 app.use(cookieParser());
