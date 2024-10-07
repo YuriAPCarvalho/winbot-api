@@ -1,14 +1,14 @@
-import { QueryInterface } from "sequelize";
+const { DataTypes } = require('sequelize');
 
 module.exports = {
-  up: (queryInterface: QueryInterface) => {
+  up: queryInterface => {
     return queryInterface.sequelize.transaction(t => {
       return Promise.all([
         queryInterface.bulkInsert(
-          "Plans",
+          'Plans',
           [
             {
-              name: "Plano 1",
+              name: 'Plano 1',
               users: 10,
               connections: 10,
               queues: 10,
@@ -20,12 +20,12 @@ module.exports = {
           { transaction: t }
         ),
         queryInterface.bulkInsert(
-          "Companies",
+          'Companies',
           [
             {
-              name: "Empresa 1",
+              name: 'Empresa 1',
               planId: 1,
-              dueDate: "2093-03-14 04:00:00+01",
+              dueDate: '2093-03-14 04:00:00+01',
               createdAt: new Date(),
               updatedAt: new Date()
             }
@@ -36,10 +36,10 @@ module.exports = {
     });
   },
 
-  down: async (queryInterface: QueryInterface) => {
+  down: async queryInterface => {
     return Promise.all([
-      queryInterface.bulkDelete("Companies", {}),
-      queryInterface.bulkDelete("Plans", {})
+      queryInterface.bulkDelete('Companies', {}),
+      queryInterface.bulkDelete('Plans', {})
     ]);
   }
 };

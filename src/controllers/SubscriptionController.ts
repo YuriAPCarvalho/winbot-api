@@ -154,24 +154,8 @@ export const createCardSubscriptionPlan = async (
     }
   };
 
-  const { access_token } = await getEFIToken();
-
-  // Configuração da requisição
-  const config = {
-    headers: {
-      Authorization: `Bearer ${access_token}`,
-      'Content-Type': 'application/json'
-    }
-  };
-
-  console.log(config);
-
-  return await axios
-    .post(
-      `${process.env.EFIAPI_URL}/v1/plan/${planID}/subscription/one-step`,
-      body,
-      config
-    )
+  return await efiAPI
+    .post(`/v1/plan/${planID}/subscription/one-step`, body)
     .then(async response => {
       console.log(response.data);
 
@@ -184,13 +168,8 @@ export const createCardSubscriptionPlan = async (
       });
 
       setTimeout(async () => {
-        await axios
-          .get(
-            process.env.EFIAPI_URL +
-              '/v1/subscription/' +
-              response.data.data.subscription_id,
-            config
-          )
+        await efiAPI
+          .get('/v1/subscription/' + response.data.data.subscription_id)
           .then(response => {
             console.log(response.data.data);
 

@@ -1,18 +1,18 @@
-import { QueryInterface } from "sequelize";
-import { hash } from "bcryptjs";
+const { DataTypes } = require('sequelize');
+import { hash } from 'bcryptjs';
 
 module.exports = {
-  up: (queryInterface: QueryInterface) => {
+  up: queryInterface => {
     return queryInterface.sequelize.transaction(async t => {
-      const passwordHash = await hash("123456", 8);
+      const passwordHash = await hash('123456', 8);
       return Promise.all([
         queryInterface.bulkInsert(
-          "Users",
+          'Users',
           [
             {
-              name: "Admin",
-              email: "admin@admin.com",
-              profile: "admin",
+              name: 'Admin',
+              email: 'admin@admin.com',
+              profile: 'admin',
               passwordHash,
               companyId: 1,
               createdAt: new Date(),
@@ -26,7 +26,7 @@ module.exports = {
     });
   },
 
-  down: async (queryInterface: QueryInterface) => {
-    return queryInterface.bulkDelete("Users", {});
+  down: async queryInterface => {
+    return queryInterface.bulkDelete('Users', {});
   }
 };
