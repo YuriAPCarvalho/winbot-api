@@ -128,7 +128,7 @@ export const createCardSubscriptionPlan = async (
     items: [
       {
         name: planName,
-        value: planValue * 1000,
+        value: planValue * 100,
         amount: 1
       }
     ],
@@ -141,8 +141,7 @@ export const createCardSubscriptionPlan = async (
           neighborhood,
           zipcode,
           city,
-          state,
-          complemento: ''
+          state
         },
         customer: {
           name,
@@ -156,7 +155,7 @@ export const createCardSubscriptionPlan = async (
   };
 
   return await efiAPI
-    .post(`/v1/plan/${planID}/subscription/one-step`, body.payment)
+    .post(`/v1/plan/${planID}/subscription/one-step`, body)
     .then(async response => {
       console.log(response.data);
 
@@ -166,18 +165,21 @@ export const createCardSubscriptionPlan = async (
         cardNumber,
         cardDate,
         cardFlag,
-        companyId,
         subscriptionID: subsID
-      });
-
-      await efiAPI
-        .post(`/v1/subscription/${subsID}/pay`, body.payment)
+      })
         .then()
         .catch(err => {
-          console.log(err);
-
           throw err;
         });
+
+      // await efiAPI
+      //   .post(`/v1/subscription/${subsID}/pay`, body.payment)
+      //   .then()
+      //   .catch(err => {
+      //     console.log(err);
+
+      //     throw err;
+      //   });
 
       setTimeout(async () => {
         await efiAPI
@@ -209,6 +211,7 @@ export const createCardSubscriptionPlan = async (
             }
           })
           .catch(err => {
+            throw err;
             console.log(err);
           });
       }, 30000);
@@ -216,7 +219,7 @@ export const createCardSubscriptionPlan = async (
     })
     .catch(error => {
       console.error('Erro ao fazer requisição:', error);
-      return res.status(400).send(error.error);
+      return res.status(400).send(error.data);
     });
 };
 
