@@ -1,19 +1,13 @@
-#!/bin/bash
+pm2 stop redis-homolog-api
 
-# Parar o container
-docker stop hml-winbot-api
+pm2 delete redis-homolog-api
 
-# Remover o container
-docker rm hml-winbot-api
-
-# Remover a imagem
-docker rmi hml-winbot-api
-
-# Atualizar o repositÃ³rio
 git pull origin staging
 
-# Construir a nova imagem
-docker build --no-cache -t image/hml-winbot-api .
+npm install
 
-# Executar o novo container
-docker run -d --env-file .env -p 4001:4001 -e PORT=4001 --name hml-winbot-api image/hml-winbot-api
+npm run build
+
+pm2 start dist/server.js --name redis-homolog-api
+
+pm2 save
