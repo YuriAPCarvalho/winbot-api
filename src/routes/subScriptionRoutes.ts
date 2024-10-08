@@ -21,8 +21,8 @@ subscriptionRoutes.post(
 );
 
 subscriptionRoutes.post(
-  '/cardsubscription/token',
-  SubscriptionController.getEFIToken
+  '/upgradeSubscription',
+  SubscriptionController.upgradeSubscription
 );
 
 subscriptionRoutes.post(

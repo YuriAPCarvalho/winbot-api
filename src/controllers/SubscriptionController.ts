@@ -27,56 +27,14 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   return res.json(gerencianet.getSubscriptions());
 };
 
-export const getEFIToken = async () => {
-  //Insira os valores de suas credenciais em desenvolvimento do pix
-  var credenciais = {
-    client_id: process.env.GERENCIANET_APICARD_CLIENT_ID,
-    client_secret: process.env.GERENCIANET_APICARD_CLIENT_SECRET
-  };
-
-  var data = JSON.stringify({ grant_type: 'client_credentials' });
-  var data_credentials =
-    credenciais.client_id + ':' + credenciais.client_secret;
-
-  var auth = Buffer.from(data_credentials).toString('base64');
-
-  var config = {
-    method: 'POST',
-    url: process.env.EFIAPI_URL + '/v1/authorize',
-    headers: {
-      Authorization: 'Basic ' + auth,
-      'Content-Type': 'application/json'
-    },
-    data: data
-  };
-
-  return await axios(config)
-    .then(function (response) {
-      return response.data;
-    })
-    .catch(function (error) {
-      return error;
-    });
-};
-
 export const getSubscription = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const accessToken = await getEFIToken();
-
-  // Configuração da requisição
-  const config = {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
-    }
-  };
-
   let { id } = req.params;
 
-  return await axios
-    .get(process.env.EFIAPI_URL + '/v1/subscription/' + id, config)
+  return await efiAPI
+    .get(process.env.EFIAPI_URL + '/v1/subscription/' + id)
     .then(response => {
       return res.send(response.data);
     })
@@ -165,6 +123,7 @@ export const createCardSubscriptionPlan = async (
         cardNumber,
         cardDate,
         cardFlag,
+        tokenCard: payment_token,
         subscriptionID: subsID
       })
         .then()
@@ -210,16 +169,58 @@ export const createCardSubscriptionPlan = async (
               res.status(400).send('O pagamento não foi efetuado!');
             }
           })
-          .catch(err => {
-            throw err;
-            console.log(err);
+          .catch(error => {
+            return res.status(400).send('Dados incorretos');
           });
       }, 30000);
       return res.status(200).send(response.data);
     })
     .catch(error => {
       console.error('Erro ao fazer requisição:', error);
-      return res.status(400).send(error.data);
+      return res.status(400).send(error);
+    });
+};
+
+export const upgradeSubscription = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { companyId, bankPlanID, planName, planValue } = req.body;
+
+  let chargeInfo = await FindByCompany(companyId)
+    .then(resp => {
+      return resp[resp.length - 1];
+    })
+    .catch(err => {
+      res.send(400).send('Erro ao encontrar company!');
+      return null;
+    });
+
+  const body = {
+    plan_id: bankPlanID,
+    customer: {
+      email: chargeInfo?.email,
+      phone_number: chargeInfo?.phone_number
+    },
+    items: [
+      {
+        name: planName,
+        value: planValue,
+        amount: 1
+      }
+    ]
+  };
+
+  return await efiAPI
+    .put('/v1/subscription' + chargeInfo?.subscriptionID, body)
+    .then(resp => {
+      console.log(resp);
+      res.status(200).send('Troca de plano efetuado com sucesso!');
+    })
+    .catch(err => {
+      res.status(400).send('Não foi possível efetuar o plano!');
+
+      console.log(err);
     });
 };
 
@@ -228,8 +229,6 @@ export const cardUnsubscription = async (
   res: Response
 ): Promise<Response> => {
   const { id, companyId } = req.user;
-
-  let chargeinfo = await FindByCompany(companyId.toString());
 
   await FindByCompany(companyId.toString()).then(async res => {
     console.log(res);
@@ -240,7 +239,6 @@ export const cardUnsubscription = async (
   });
 
   return await Promise.all([
-    UpdateCompanyService({ id: companyId, dueDate: new Date().toDateString() }),
     DeleteByCompany(companyId.toString()),
     CalcelLastInvoice(companyId)
   ])

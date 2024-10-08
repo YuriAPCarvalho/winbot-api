@@ -42,6 +42,10 @@ class ChargeInfo extends Model<ChargeInfo> {
   @Column
   state: string;
 
+  @AllowNull(true)
+  @Column
+  tokenCard: string;
+
   @Column
   street: string;
   @Column

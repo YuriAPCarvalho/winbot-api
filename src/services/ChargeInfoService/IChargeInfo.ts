@@ -18,4 +18,5 @@ export interface IChargeInfo {
   cardFlag?: string;
   subscriptionID?: number;
   companyId?: number;
+  tokenCard?: string;
 }

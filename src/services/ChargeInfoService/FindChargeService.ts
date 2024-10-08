@@ -12,6 +12,6 @@ export const FindByCompany = async (id: string): Promise<ChargeInfo[]> => {
 
     return charges;
   } catch (err) {
-    throw new AppError('ERR_NO_COMPANY_FOUND', 404);
+    return [];
   }
 };
