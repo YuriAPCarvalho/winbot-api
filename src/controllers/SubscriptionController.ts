@@ -171,7 +171,7 @@ export const createCardSubscriptionPlan = async (
       });
 
       await efiAPI
-        .post(`/v1/subscription/${subsID}`, body.payment)
+        .post(`/v1/subscription/${subsID}/pay`, body.payment)
         .then()
         .catch(err => {
           console.log(err);
