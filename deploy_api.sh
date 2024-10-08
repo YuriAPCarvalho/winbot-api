@@ -11,3 +11,5 @@ npm run build
 pm2 start dist/server.js --name redis-homolog-api
 
 pm2 save
+
+echo "Deploy finalizado com sucesso!"
