@@ -6,6 +6,7 @@ import Invoices from '../../models/Invoices';
 import FindAllInvoiceService from './FindAllInvoiceService';
 import UpdateInvoiceService from './UpdateInvoiceService';
 import { IInvoice } from './IInvoice';
+import { DeleteInvoice } from './DeleteInvoice';
 
 const CreateInvoiceService = async (data: IInvoice): Promise<Invoices> => {
   try {
@@ -13,7 +14,10 @@ const CreateInvoiceService = async (data: IInvoice): Promise<Invoices> => {
 
     var invoices = await FindAllInvoiceService(companyId);
 
-    if (invoices.length > 0) {
+    //means the user is in your free trial
+    if (invoices.length == 1) {
+      await DeleteInvoice(invoices[0]?.id?.toString());
+    } else {
       await UpdateInvoiceService({
         id: invoices[invoices.length - 1].id,
         status: 'paid'
