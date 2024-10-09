@@ -16,7 +16,7 @@ const CalcelLastInvoice = async (companyid: number): Promise<Invoice> => {
   let updatedInvoice = await UpdateInvoiceService({
     id: lastInvoice?.id,
     status: 'canceled',
-    dueDate: new Date().toDateString()
+    dueDate: new Date().toISOString()
   });
 
   if (!updatedInvoice) {

@@ -19,6 +19,8 @@ import ShowCompanyService from '../services/CompanyService/ShowCompanyService';
 import { FindByCompany } from '../services/ChargeInfoService/FindChargeService';
 import ChargeInfo from '../models/ChargeInfo';
 import efiAPI from '../efiAPI';
+import FindAllInvoiceService from '../services/InvoicesService/FindAllInvoiceService';
+import { IsFreeTrial } from '../helpers/IsFreeTrial';
 
 const app = express();
 
@@ -43,13 +45,13 @@ export const getSubscription = async (
     });
 };
 
-function newDueDate() {
+export function newDueDate() {
   const today = new Date();
   const nextDate = new Date(today);
 
   nextDate.setDate(today.getDate() + 30);
 
-  return nextDate.toDateString();
+  return nextDate.toISOString();
 }
 
 export const createCardSubscriptionPlan = async (
@@ -137,13 +139,9 @@ export const createCardSubscriptionPlan = async (
           console.log(response.data.data);
 
           if (
-            ['paid', 'approved'].some(
-              v =>
-                v ==
-                response.data.data.history[
-                  response.data.data.history.length - 1
-                ].status
-            )
+            'paid' ==
+            response.data.data.history[response.data.data.history.length - 1]
+              .status
           ) {
             Promise.all([
               UpdateCompanyService({ id: companyId, dueDate: newDueDate() }),
@@ -158,7 +156,21 @@ export const createCardSubscriptionPlan = async (
           } else {
             await efiAPI
               .post(`/v1/subscription/${subsID}/pay`, body.payment)
-              .then()
+              .then(async () => {
+                await Promise.all([
+                  UpdateCompanyService({
+                    id: companyId,
+                    dueDate: newDueDate()
+                  }),
+                  CreateInvoiceService({
+                    detail: planName,
+                    status: 'open',
+                    value: planValue,
+                    dueDate: newDueDate(),
+                    companyId
+                  })
+                ]);
+              })
               .catch(err => {
                 console.log(err);
                 res.status(400).send('O pagamento não foi efetuado!');
@@ -182,8 +194,10 @@ export const upgradeSubscription = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const { companyId, bankPlanID, planName, planValue } = req.body;
+  const { companyId, bankPlanID, planName, planValue, dueDate } = req.body;
 
+  console.log(req.body);
+  let invoices = await FindAllInvoiceService(companyId);
   let chargeInfo = await FindByCompany(companyId)
     .then(resp => {
       return resp[resp.length - 1];
@@ -195,29 +209,138 @@ export const upgradeSubscription = async (
 
   const body = {
     plan_id: bankPlanID,
-    customer: {
-      email: chargeInfo?.email,
-      phone_number: chargeInfo?.phone_number
-    },
-    items: [
+    shippings: [
       {
-        name: planName,
-        value: planValue,
-        amount: 1
+        name: `Upgrade para o plano ${planName}`,
+        value: 300
       }
     ]
   };
 
-  return await efiAPI
-    .put('/v1/subscription' + chargeInfo?.subscriptionID, body)
-    .then(resp => {
-      console.log(resp);
-      res.status(200).send('Troca de plano efetuado com sucesso!');
-    })
-    .catch(err => {
-      res.status(400).send('Não foi possível efetuar o plano!');
+  const {
+    planID,
+    tokenCard,
+    street,
+    number,
+    neighborhood,
+    zipcode,
+    city,
+    state,
+    name,
+    email,
+    cpf,
+    birth,
+    phone_number
+  } = chargeInfo;
 
-      console.log(err);
+  const bodyPayment = {
+    items: [
+      {
+        name: planName,
+        value: 300,
+        amount: 1
+      }
+    ],
+    payment: {
+      credit_card: {
+        payment_token: tokenCard,
+        billing_address: {
+          street,
+          number,
+          neighborhood,
+          zipcode,
+          city,
+          state
+        },
+        customer: {
+          name: name + ' silva',
+          email,
+          cpf,
+          birth,
+          phone_number
+        }
+      }
+    }
+  };
+
+  await efiAPI
+    .put(`/v1/subscription/${chargeInfo?.subscriptionID}/cancel`)
+    .then()
+    .catch(err => {});
+
+  return await efiAPI
+    .post(`/v1/plan/${bankPlanID}/subscription/one-step`, bodyPayment)
+    .then(async response => {
+      console.log(response.data);
+
+      let subsID = response.data.data.subscription_id;
+      await updateChargeService({
+        id: chargeInfo.id,
+        subscriptionID: subsID
+      })
+        .then()
+        .catch(err => {
+          throw err;
+        });
+
+      await efiAPI
+        .get('/v1/subscription/' + subsID)
+        .then(async response => {
+          console.log(response.data.data);
+
+          if (
+            ['paid', 'approved'].some(
+              a =>
+                a ==
+                response.data.data.history[
+                  response.data.data.history.length - 1
+                ].status
+            )
+          ) {
+            Promise.all([
+              UpdateCompanyService({
+                id: companyId,
+                dueDate: IsFreeTrial(invoices) ? newDueDate() : dueDate
+              }),
+              await CreateInvoiceService({
+                detail: planName,
+                status: 'open',
+                value: planValue,
+                dueDate,
+                companyId
+              })
+            ]);
+          } else {
+            await efiAPI
+              .post(`/v1/subscription/${subsID}/pay`, bodyPayment)
+              .then(async () => {
+                Promise.all([
+                  UpdateCompanyService({
+                    id: companyId,
+                    dueDate: IsFreeTrial(invoices) ? newDueDate() : dueDate
+                  }),
+                  await CreateInvoiceService({
+                    detail: name,
+                    status: 'open',
+                    value: planValue,
+                    dueDate,
+                    companyId
+                  })
+                ]);
+              })
+              .catch(err => {
+                console.log(err);
+              });
+          }
+        })
+        .catch(error => {
+          console.log(error);
+        });
+      return res.status(200).send('Plano Alterado com sucesso');
+    })
+    .catch(error => {
+      console.error('Erro ao fazer requisição:', error);
+      return res.status(400).send(error);
     });
 };
 
