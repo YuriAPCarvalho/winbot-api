@@ -138,45 +138,45 @@ export const createCardSubscriptionPlan = async (
         .then(async response => {
           console.log(response.data.data);
 
-          if (
-            response.data.data.history[response.data.data.history.length - 1]
-              .status !== 'paid'
-          ) {
-            await efiAPI
-              .post(`/v1/subscription/${subsID}/pay`, body.payment)
-              .then(async () => {
-                await Promise.all([
-                  UpdateCompanyService({
-                    id: companyId,
-                    dueDate: newDueDate()
-                  }),
-                  CreateInvoiceService({
-                    detail: planName,
-                    status: 'open',
-                    value: planValue,
-                    dueDate: newDueDate(),
-                    companyId
-                  })
-                ]);
-              })
-              .catch(err => {
-                console.log(err);
-                res.status(400).send('O pagamento não foi efetuado!');
+          // if (
+          //   response.data.data.history[response.data.data.history.length - 1]
+          //     .status !== 'paid'
+          // ) {
+          //   await efiAPI
+          //     .post(`/v1/subscription/${subsID}/pay`, body.payment)
+          //     .then(async () => {
+          //       await Promise.all([
+          //         UpdateCompanyService({
+          //           id: companyId,
+          //           dueDate: newDueDate()
+          //         }),
+          //         CreateInvoiceService({
+          //           detail: planName,
+          //           status: 'open',
+          //           value: planValue,
+          //           dueDate: newDueDate(),
+          //           companyId
+          //         })
+          //       ]);
+          //     })
+          //     .catch(err => {
+          //       console.log(err);
+          //       res.status(400).send('O pagamento não foi efetuado!');
 
-                throw err;
-              });
-          } else {
-            await Promise.all([
-              UpdateCompanyService({ id: companyId, dueDate: newDueDate() }),
-              CreateInvoiceService({
-                detail: planName,
-                status: 'open',
-                value: planValue,
-                dueDate: newDueDate(),
-                companyId
-              })
-            ]);
-          }
+          //       throw err;
+          //     });
+          // } else {
+          await Promise.all([
+            UpdateCompanyService({ id: companyId, dueDate: newDueDate() }),
+            CreateInvoiceService({
+              detail: planName,
+              status: 'open',
+              value: planValue,
+              dueDate: newDueDate(),
+              companyId
+            })
+          ]);
+          // }
         })
         .catch(error => {
           return res.status(400).send('Dados incorretos');
