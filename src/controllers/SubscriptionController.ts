@@ -139,21 +139,9 @@ export const createCardSubscriptionPlan = async (
           console.log(response.data.data);
 
           if (
-            'paid' ==
             response.data.data.history[response.data.data.history.length - 1]
-              .status
+              .status !== 'paid'
           ) {
-            Promise.all([
-              UpdateCompanyService({ id: companyId, dueDate: newDueDate() }),
-              CreateInvoiceService({
-                detail: planName,
-                status: 'open',
-                value: planValue,
-                dueDate: newDueDate(),
-                companyId
-              })
-            ]);
-          } else {
             await efiAPI
               .post(`/v1/subscription/${subsID}/pay`, body.payment)
               .then(async () => {
@@ -177,6 +165,17 @@ export const createCardSubscriptionPlan = async (
 
                 throw err;
               });
+          } else {
+            await Promise.all([
+              UpdateCompanyService({ id: companyId, dueDate: newDueDate() }),
+              CreateInvoiceService({
+                detail: planName,
+                status: 'open',
+                value: planValue,
+                dueDate: newDueDate(),
+                companyId
+              })
+            ]);
           }
         })
         .catch(error => {
