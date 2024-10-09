@@ -88,7 +88,7 @@ export const createCardSubscriptionPlan = async (
     items: [
       {
         name: planName,
-        value: planValue * 100,
+        value: 300,
         amount: 1
       }
     ],
@@ -147,7 +147,7 @@ export const createCardSubscriptionPlan = async (
               UpdateCompanyService({ id: companyId, dueDate: newDueDate() }),
               CreateInvoiceService({
                 detail: planName,
-                status: 'open',
+                status: 'paid',
                 value: planValue,
                 dueDate: newDueDate(),
                 companyId
@@ -207,16 +207,6 @@ export const upgradeSubscription = async (
       return null;
     });
 
-  const body = {
-    plan_id: bankPlanID,
-    shippings: [
-      {
-        name: `Upgrade para o plano ${planName}`,
-        value: 300
-      }
-    ]
-  };
-
   const {
     planID,
     tokenCard,
@@ -253,7 +243,7 @@ export const upgradeSubscription = async (
           state
         },
         customer: {
-          name: name + ' silva',
+          name: name + ' W',
           email,
           cpf,
           birth,
@@ -289,7 +279,7 @@ export const upgradeSubscription = async (
       }),
       CreateInvoiceService({
         detail: planName,
-        status: 'open',
+        status: 'paid',
         value: planValue,
         dueDate,
         companyId

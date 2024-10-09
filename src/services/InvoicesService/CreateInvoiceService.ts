@@ -20,16 +20,11 @@ const CreateInvoiceService = async (data: IInvoice): Promise<Invoices> => {
     let c: Date = new Date(lastInvoice.createdAt);
     let due: Date = new Date(lastInvoice.dueDate);
     let ehFreeTrial: boolean =
-      (due.getTime() - c.getTime()) / (1000 * 60 * 60 * 24) == 7;
+      (due.getTime() - c.getTime()) / (1000 * 60 * 60 * 24) == 6;
     //means the user is in your free trial
     if (ehFreeTrial) {
       await DeleteInvoice(invoices[0]?.id?.toString());
       data.dueDate = newDueDate();
-    } else {
-      await UpdateInvoiceService({
-        id: invoices[invoices.length - 1].id,
-        status: 'paid'
-      });
     }
 
     const record = await Invoices.create(data);
