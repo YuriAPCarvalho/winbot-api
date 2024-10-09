@@ -195,152 +195,78 @@ export const upgradeSubscription = async (
 ): Promise<Response> => {
   const { companyId, bankPlanID, planName, planValue, dueDate } = req.body;
 
-  console.log(req.body);
-  let invoices = await FindAllInvoiceService(companyId);
-  let chargeInfo = await FindByCompany(companyId)
-    .then(resp => {
-      return resp[resp.length - 1];
-    })
-    .catch(err => {
-      res.send(400).send('Erro ao encontrar company!');
-      return null;
-    });
+  try {
+    console.log(req.body);
 
-  const body = {
-    plan_id: bankPlanID,
-    shippings: [
-      {
-        name: `Upgrade para o plano ${planName}`,
-        value: 300
-      }
-    ]
-  };
+    const invoices = await FindAllInvoiceService(companyId);
+    const chargeInfo = await FindByCompany(companyId).then(resp => resp.pop());
 
-  const {
-    planID,
-    tokenCard,
-    street,
-    number,
-    neighborhood,
-    zipcode,
-    city,
-    state,
-    name,
-    email,
-    cpf,
-    birth,
-    phone_number
-  } = chargeInfo;
+    if (!chargeInfo) {
+      return res.status(400).send('Erro ao encontrar informações da empresa!');
+    }
 
-  const bodyPayment = {
-    items: [
-      {
-        name: planName,
-        value: 300,
-        amount: 1
-      }
-    ],
-    payment: {
-      credit_card: {
-        payment_token: tokenCard,
-        billing_address: {
-          street,
-          number,
-          neighborhood,
-          zipcode,
-          city,
-          state
-        },
-        customer: {
-          name: name + ' silva',
-          email,
-          cpf,
-          birth,
-          phone_number
+    const bodyPayment = {
+      items: [
+        {
+          name: planName,
+          value: planValue,
+          amount: 1
+        }
+      ],
+      payment: {
+        credit_card: {
+          payment_token: chargeInfo.tokenCard,
+          billing_address: {
+            street: chargeInfo.street,
+            number: chargeInfo.number,
+            neighborhood: chargeInfo.neighborhood,
+            zipcode: chargeInfo.zipcode,
+            city: chargeInfo.city,
+            state: chargeInfo.state
+          },
+          customer: {
+            name: `${chargeInfo.name} Silva`,
+            email: chargeInfo.email,
+            cpf: chargeInfo.cpf,
+            birth: chargeInfo.birth,
+            phone_number: chargeInfo.phone_number
+          }
         }
       }
-    }
-  };
+    };
 
-  await efiAPI
-    .put(`/v1/subscription/${chargeInfo?.subscriptionID}/cancel`)
-    .then()
-    .catch(err => {});
+    await efiAPI.put(`/v1/subscription/${chargeInfo.subscriptionID}/cancel`);
 
-  return await efiAPI
-    .post(`/v1/plan/${bankPlanID}/subscription/one-step`, bodyPayment)
-    .then(async response => {
-      console.log(response.data);
+    const response = await efiAPI.post(
+      `/v1/plan/${bankPlanID}/subscription/one-step`,
+      bodyPayment
+    );
+    const newSubscriptionId = response.data.data.subscription_id;
 
-      let subsID = response.data.data.subscription_id;
-      await updateChargeService({
-        id: chargeInfo.id,
-        subscriptionID: subsID
-      })
-        .then()
-        .catch(err => {
-          throw err;
-        });
-
-      await efiAPI
-        .get('/v1/subscription/' + subsID)
-        .then(async response => {
-          console.log(response.data.data);
-
-          if (
-            ['paid', 'approved'].some(
-              a =>
-                a ==
-                response.data.data.history[
-                  response.data.data.history.length - 1
-                ].status
-            )
-          ) {
-            Promise.all([
-              UpdateCompanyService({
-                id: companyId,
-                dueDate: IsFreeTrial(invoices) ? newDueDate() : dueDate
-              }),
-              await CreateInvoiceService({
-                detail: planName,
-                status: 'open',
-                value: planValue,
-                dueDate,
-                companyId
-              })
-            ]);
-          } else {
-            await efiAPI
-              .post(`/v1/subscription/${subsID}/pay`, bodyPayment)
-              .then(async () => {
-                Promise.all([
-                  UpdateCompanyService({
-                    id: companyId,
-                    dueDate: IsFreeTrial(invoices) ? newDueDate() : dueDate
-                  }),
-                  await CreateInvoiceService({
-                    detail: name,
-                    status: 'open',
-                    value: planValue,
-                    dueDate,
-                    companyId
-                  })
-                ]);
-              })
-              .catch(err => {
-                console.log(err);
-              });
-          }
-        })
-        .catch(error => {
-          console.log(error);
-        });
-      return res.status(200).send('Plano Alterado com sucesso');
-    })
-    .catch(error => {
-      console.error('Erro ao fazer requisição:', error);
-      return res.status(400).send(error);
+    await updateChargeService({
+      id: chargeInfo.id,
+      subscriptionID: newSubscriptionId
     });
+
+    await Promise.all([
+      UpdateCompanyService({
+        id: companyId,
+        dueDate: IsFreeTrial(invoices) ? newDueDate() : dueDate
+      }),
+      CreateInvoiceService({
+        detail: planName,
+        status: 'open',
+        value: planValue,
+        dueDate,
+        companyId
+      })
+    ]);
+
+    return res.status(200).send('Plano alterado com sucesso');
+  } catch (error) {
+    console.error('Erro ao atualizar assinatura:', error);
+    return res.status(400).send('Erro ao atualizar assinatura');
+  }
 };
 
 export const cardUnsubscription = async (
