@@ -138,45 +138,46 @@ export const createCardSubscriptionPlan = async (
         .then(async response => {
           console.log(response.data.data);
 
-          // if (
-          //   response.data.data.history[response.data.data.history.length - 1]
-          //     .status !== 'paid'
-          // ) {
-          //   await efiAPI
-          //     .post(`/v1/subscription/${subsID}/pay`, body.payment)
-          //     .then(async () => {
-          //       await Promise.all([
-          //         UpdateCompanyService({
-          //           id: companyId,
-          //           dueDate: newDueDate()
-          //         }),
-          //         CreateInvoiceService({
-          //           detail: planName,
-          //           status: 'open',
-          //           value: planValue,
-          //           dueDate: newDueDate(),
-          //           companyId
-          //         })
-          //       ]);
-          //     })
-          //     .catch(err => {
-          //       console.log(err);
-          //       res.status(400).send('O pagamento não foi efetuado!');
+          if (
+            'paid' ==
+            response.data.data.history[response.data.data.history.length - 1]
+              .status
+          ) {
+            Promise.all([
+              UpdateCompanyService({ id: companyId, dueDate: newDueDate() }),
+              CreateInvoiceService({
+                detail: planName,
+                status: 'open',
+                value: planValue,
+                dueDate: newDueDate(),
+                companyId
+              })
+            ]);
+          } else {
+            await efiAPI
+              .post(`/v1/subscription/${subsID}/pay`, body.payment)
+              .then(async () => {
+                await Promise.all([
+                  UpdateCompanyService({
+                    id: companyId,
+                    dueDate: newDueDate()
+                  }),
+                  CreateInvoiceService({
+                    detail: planName,
+                    status: 'open',
+                    value: planValue,
+                    dueDate: newDueDate(),
+                    companyId
+                  })
+                ]);
+              })
+              .catch(err => {
+                console.log(err);
+                res.status(400).send('O pagamento não foi efetuado!');
 
-          //       throw err;
-          //     });
-          // } else {
-          await Promise.all([
-            UpdateCompanyService({ id: companyId, dueDate: newDueDate() }),
-            CreateInvoiceService({
-              detail: planName,
-              status: 'open',
-              value: planValue,
-              dueDate: newDueDate(),
-              companyId
-            })
-          ]);
-          // }
+                throw err;
+              });
+          }
         })
         .catch(error => {
           return res.status(400).send('Dados incorretos');
@@ -195,52 +196,85 @@ export const upgradeSubscription = async (
 ): Promise<Response> => {
   const { companyId, bankPlanID, planName, planValue, dueDate } = req.body;
 
-  try {
-    console.log(req.body);
+  console.log(req.body);
+  let invoices = await FindAllInvoiceService(companyId);
+  let chargeInfo = await FindByCompany(companyId)
+    .then(resp => {
+      return resp[resp.length - 1];
+    })
+    .catch(err => {
+      res.send(400).send('Erro ao encontrar company!');
+      return null;
+    });
 
-    const invoices = await FindAllInvoiceService(companyId);
-    const chargeInfo = await FindByCompany(companyId).then(resp => resp.pop());
+  const body = {
+    plan_id: bankPlanID,
+    shippings: [
+      {
+        name: `Upgrade para o plano ${planName}`,
+        value: 300
+      }
+    ]
+  };
 
-    if (!chargeInfo) {
-      return res.status(400).send('Erro ao encontrar informações da empresa!');
-    }
+  const {
+    planID,
+    tokenCard,
+    street,
+    number,
+    neighborhood,
+    zipcode,
+    city,
+    state,
+    name,
+    email,
+    cpf,
+    birth,
+    phone_number
+  } = chargeInfo;
 
-    const bodyPayment = {
-      items: [
-        {
-          name: planName,
-          value: 300,
-          amount: 1
-        }
-      ],
-      payment: {
-        credit_card: {
-          payment_token: chargeInfo.tokenCard,
-          billing_address: {
-            street: chargeInfo.street,
-            number: chargeInfo.number,
-            neighborhood: chargeInfo.neighborhood,
-            zipcode: chargeInfo.zipcode,
-            city: chargeInfo.city,
-            state: chargeInfo.state
-          },
-          customer: {
-            name: `${chargeInfo.name} Silva`,
-            email: chargeInfo.email,
-            cpf: chargeInfo.cpf,
-            birth: chargeInfo.birth,
-            phone_number: chargeInfo.phone_number
-          }
+  const bodyPayment = {
+    items: [
+      {
+        name: planName,
+        value: 300,
+        amount: 1
+      }
+    ],
+    payment: {
+      credit_card: {
+        payment_token: tokenCard,
+        billing_address: {
+          street,
+          number,
+          neighborhood,
+          zipcode,
+          city,
+          state
+        },
+        customer: {
+          name: name + ' silva',
+          email,
+          cpf,
+          birth,
+          phone_number
         }
       }
-    };
-
-    await efiAPI.put(`/v1/subscription/${chargeInfo.subscriptionID}/cancel`);
+    }
+  };
+  try {
+    await efiAPI
+      .put(`/v1/subscription/${chargeInfo.subscriptionID}/cancel`)
+      .then()
+      .catch(() => {});
 
     const response = await efiAPI.post(
       `/v1/plan/${bankPlanID}/subscription/one-step`,
       bodyPayment
     );
+
+    console.log(response);
+
     const newSubscriptionId = response.data.data.subscription_id;
 
     await updateChargeService({
