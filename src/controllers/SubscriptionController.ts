@@ -209,7 +209,7 @@ export const upgradeSubscription = async (
       items: [
         {
           name: planName,
-          value: planValue,
+          value: 300,
           amount: 1
         }
       ],
