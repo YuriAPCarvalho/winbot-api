@@ -21,6 +21,7 @@ import ChargeInfo from '../models/ChargeInfo';
 import efiAPI from '../efiAPI';
 import FindAllInvoiceService from '../services/InvoicesService/FindAllInvoiceService';
 import { IsFreeTrial } from '../helpers/IsFreeTrial';
+import { log } from 'console';
 
 const app = express();
 
@@ -122,23 +123,37 @@ export const createCardSubscriptionPlan = async (
   );
 
   let subscription = response.data.data;
+  console.log(response);
+  console.log(subscription);
 
   let i = 0;
-  let actualStauts = subscription.charge.status;
+  let actualStatus = subscription.charge.status;
+  console.log(actualStatus);
+
   do {
     let res = await efiAPI.post(
-      'v1/charge/' + subscription.charge.id + '/retry'
+      'v1/charge/' + subscription.charge.id + '/retry',
+      {
+        ...body,
+        payment: {
+          ...body.payment,
+          credit_card: {
+            ...body.payment.credit_card,
+            update_card: true
+          }
+        }
+      }
     );
     console.log(res);
 
-    actualStauts = res.data.data.status;
+    actualStatus = res.data.data.status;
     i++;
   } while (
-    ['unpaid', 'canceled'].some(status => status == actualStauts) &&
+    ['unpaid', 'canceled'].some(status => status == actualStatus) &&
     i <= 3
   );
 
-  if (actualStauts == 'paid') {
+  if (actualStatus == 'paid') {
     await Promise.all([
       await updateChargeService({
         id: id,
