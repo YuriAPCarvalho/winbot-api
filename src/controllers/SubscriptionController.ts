@@ -84,14 +84,16 @@ export const createCardSubscriptionPlan = async (
     companyId
   } = req.body;
 
-  const body = {
+  let itemsCheckout = {
     items: [
       {
         name: planName,
         value: 300,
         amount: 1
       }
-    ],
+    ]
+  };
+  const body = {
     payment: {
       credit_card: {
         payment_token,
@@ -114,80 +116,51 @@ export const createCardSubscriptionPlan = async (
     }
   };
 
-  return await efiAPI
-    .post(`/v1/plan/${planID}/subscription/one-step`, body)
-    .then(async response => {
-      console.log(response.data);
+  const response = await efiAPI.post(
+    `/v1/plan/${planID}/subscription/one-step`,
+    { ...body, ...itemsCheckout }
+  );
 
-      let subsID = response.data.data.subscription_id;
+  let subscription = response.data.data;
+
+  let i = 0;
+  let actualStauts = subscription.charge.status;
+  do {
+    let res = await efiAPI.post(
+      'v1/charge/' + subscription.charge.id + '/retry'
+    );
+    console.log(res);
+
+    actualStauts = res.data.status;
+    i++;
+  } while (
+    ['unpaid', 'canceled'].some(status => status == actualStauts) &&
+    i <= 3
+  );
+
+  if (actualStauts == 'paid') {
+    Promise.all([
       await updateChargeService({
         id: id,
         cardNumber,
         cardDate,
         cardFlag,
         tokenCard: payment_token,
-        subscriptionID: subsID
+        subscriptionID: subscription.subscription_id
+      }),
+      UpdateCompanyService({ id: companyId, dueDate: newDueDate() }),
+      CreateInvoiceService({
+        detail: planName,
+        status: 'paid',
+        value: planValue,
+        dueDate: newDueDate(),
+        companyId
       })
-        .then()
-        .catch(err => {
-          throw err;
-        });
-
-      await efiAPI
-        .get('/v1/subscription/' + subsID)
-        .then(async response => {
-          console.log(response.data.data);
-
-          if (
-            'paid' ==
-            response.data.data.history[response.data.data.history.length - 1]
-              .status
-          ) {
-            Promise.all([
-              UpdateCompanyService({ id: companyId, dueDate: newDueDate() }),
-              CreateInvoiceService({
-                detail: planName,
-                status: 'paid',
-                value: planValue,
-                dueDate: newDueDate(),
-                companyId
-              })
-            ]);
-          } else {
-            await efiAPI
-              .post(`/v1/subscription/${subsID}/pay`, body.payment)
-              .then(async () => {
-                await Promise.all([
-                  UpdateCompanyService({
-                    id: companyId,
-                    dueDate: newDueDate()
-                  }),
-                  CreateInvoiceService({
-                    detail: planName,
-                    status: 'open',
-                    value: planValue,
-                    dueDate: newDueDate(),
-                    companyId
-                  })
-                ]);
-              })
-              .catch(err => {
-                console.log(err);
-                res.status(400).send('O pagamento não foi efetuado!');
-
-                throw err;
-              });
-          }
-        })
-        .catch(error => {
-          return res.status(400).send('Dados incorretos');
-        });
-      return res.status(200).send(response.data);
-    })
-    .catch(error => {
-      console.error('Erro ao fazer requisição:', error);
-      return res.status(400).send(error);
-    });
+    ]);
+    return res.status(200).send(response.data);
+  } else {
+    return res.status(400).send('Não foi possível completar a operação!');
+  }
 };
 
 export const upgradeSubscription = async (
