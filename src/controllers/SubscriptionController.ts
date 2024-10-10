@@ -131,7 +131,7 @@ export const createCardSubscriptionPlan = async (
     );
     console.log(res);
 
-    actualStauts = res.data.status;
+    actualStauts = res.data.data.status;
     i++;
   } while (
     ['unpaid', 'canceled'].some(status => status == actualStauts) &&
@@ -139,7 +139,7 @@ export const createCardSubscriptionPlan = async (
   );
 
   if (actualStauts == 'paid') {
-    Promise.all([
+    await Promise.all([
       await updateChargeService({
         id: id,
         cardNumber,
