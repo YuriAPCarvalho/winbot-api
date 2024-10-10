@@ -91,7 +91,7 @@ export const createCardSubscriptionPlan = async (
     items: [
       {
         name: planName,
-        value: 320,
+        value: 400,
         amount: 1
       }
     ]
@@ -123,17 +123,23 @@ export const createCardSubscriptionPlan = async (
   let actualStatus = '';
   let subscription;
   do {
+    itemsCheckout.items[0].value -= 1;
+
     const response = await efiAPI.post(
       `/v1/plan/${planID}/subscription/one-step`,
       { ...body, ...itemsCheckout }
     );
     subscription = response.data.data;
 
+    console.log(subscription);
+
     await await delay(30000);
 
-    let subInfo = efiAPI.get(
+    let subInfo = await efiAPI.get(
       '/v1/subscription/' + subscription.subscription_id
     );
+
+    console.log(subInfo);
 
     actualStatus = subInfo.data.data.status;
 
@@ -200,14 +206,16 @@ export const upgradeSubscription = async (
     phone_number
   } = chargeInfo;
 
-  const bodyPayment = {
+  let itemsCheckout = {
     items: [
       {
         name: planName,
-        value: 300,
+        value: 400,
         amount: 1
       }
-    ],
+    ]
+  };
+  const body = {
     payment: {
       credit_card: {
         payment_token: tokenCard,
@@ -229,44 +237,58 @@ export const upgradeSubscription = async (
       }
     }
   };
-  try {
-    await efiAPI
-      .put(`/v1/subscription/${chargeInfo.subscriptionID}/cancel`)
-      .then()
-      .catch(() => {});
+  await efiAPI
+    .put(`/v1/subscription/${chargeInfo.subscriptionID}/cancel`)
+    .then()
+    .catch(() => {});
+
+  let i = 0;
+  let actualStatus = '';
+  let subscription;
+  do {
+    itemsCheckout.items[0].value -= 1;
 
     const response = await efiAPI.post(
-      `/v1/plan/${bankPlanID}/subscription/one-step`,
-      bodyPayment
+      `/v1/plan/${planID}/subscription/one-step`,
+      { ...body, ...itemsCheckout }
+    );
+    subscription = response.data.data;
+
+    console.log(subscription);
+
+    await await delay(30000);
+
+    let subInfo = await efiAPI.get(
+      '/v1/subscription/' + subscription.subscription_id
     );
 
-    console.log(response);
+    console.log(subInfo);
 
-    const newSubscriptionId = response.data.data.subscription_id;
+    actualStatus = subInfo.data.data.status;
 
-    await updateChargeService({
-      id: chargeInfo.id,
-      subscriptionID: newSubscriptionId
-    });
+    console.log(actualStatus);
 
+    i++;
+  } while (actualStatus != 'active' && i <= 3);
+
+  if (actualStatus == 'active') {
     await Promise.all([
-      UpdateCompanyService({
-        id: companyId,
-        dueDate: IsFreeTrial(invoices) ? newDueDate() : dueDate
+      await updateChargeService({
+        id: chargeInfo.id,
+        subscriptionID: subscription.subscription_id
       }),
+      UpdateCompanyService({ id: companyId, dueDate: newDueDate() }),
       CreateInvoiceService({
         detail: planName,
         status: 'paid',
         value: planValue,
-        dueDate,
+        dueDate: newDueDate(),
         companyId
       })
     ]);
-
-    return res.status(200).send('Plano alterado com sucesso');
-  } catch (error) {
-    console.error('Erro ao atualizar assinatura:', error);
-    return res.status(400).send('Erro ao atualizar assinatura');
+    return res.status(200);
+  } else {
+    return res.status(400).send('Não foi possível completar a operação!');
   }
 };
 
