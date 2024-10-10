@@ -30,6 +30,8 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   return res.json(gerencianet.getSubscriptions());
 };
 
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 export const getSubscription = async (
   req: Request,
   res: Response
@@ -127,12 +129,13 @@ export const createCardSubscriptionPlan = async (
     );
     subscription = response.data.data;
 
-    setTimeout(() => {
-      let subInfo = efiAPI.get(
-        '/v1/subscription/' + subscription.subscription_id
-      );
-      actualStatus = subInfo.data.data.status;
-    }, 30000);
+    await await delay(30000);
+
+    let subInfo = efiAPI.get(
+      '/v1/subscription/' + subscription.subscription_id
+    );
+
+    actualStatus = subInfo.data.data.status;
 
     console.log(actualStatus);
 
