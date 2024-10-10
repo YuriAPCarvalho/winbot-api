@@ -89,7 +89,7 @@ export const createCardSubscriptionPlan = async (
     items: [
       {
         name: planName,
-        value: 300,
+        value: 320,
         amount: 1
       }
     ]
@@ -117,43 +117,29 @@ export const createCardSubscriptionPlan = async (
     }
   };
 
-  const response = await efiAPI.post(
-    `/v1/plan/${planID}/subscription/one-step`,
-    { ...body, ...itemsCheckout }
-  );
-
-  let subscription = response.data.data;
-  console.log(response);
-  console.log(subscription);
-
   let i = 0;
-  let actualStatus = subscription.charge.status;
-  console.log(actualStatus);
-
+  let actualStatus = '';
+  let subscription;
   do {
-    let res = await efiAPI.post(
-      'v1/charge/' + subscription.charge.id + '/retry',
-      {
-        ...body,
-        payment: {
-          ...body.payment,
-          credit_card: {
-            ...body.payment.credit_card,
-            update_card: true
-          }
-        }
-      }
+    const response = await efiAPI.post(
+      `/v1/plan/${planID}/subscription/one-step`,
+      { ...body, ...itemsCheckout }
     );
-    console.log(res);
+    subscription = response.data.data;
 
-    actualStatus = res.data.data.status;
+    setTimeout(() => {
+      let subInfo = efiAPI.get(
+        '/v1/subscription/' + subscription.subscription_id
+      );
+      actualStatus = subInfo.data.data.status;
+    }, 30000);
+
+    console.log(actualStatus);
+
     i++;
-  } while (
-    ['unpaid', 'canceled'].some(status => status == actualStatus) &&
-    i <= 3
-  );
+  } while (actualStatus != 'active' && i <= 3);
 
-  if (actualStatus == 'paid') {
+  if (actualStatus == 'active') {
     await Promise.all([
       await updateChargeService({
         id: id,
@@ -172,7 +158,7 @@ export const createCardSubscriptionPlan = async (
         companyId
       })
     ]);
-    return res.status(200).send(response.data);
+    return res.status(200);
   } else {
     return res.status(400).send('Não foi possível completar a operação!');
   }
