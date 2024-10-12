@@ -123,6 +123,13 @@ export const createCardSubscriptionPlan = async (
   let actualStatus = '';
   let subscription;
   do {
+    if (subscription) {
+      await efiAPI
+        .put(`/v1/subscription/${subscription.subscription_id}/cancel`)
+        .then()
+        .catch(() => {});
+    }
+
     itemsCheckout.items[0].value -= 1;
 
     const response = await efiAPI.post(
@@ -133,7 +140,7 @@ export const createCardSubscriptionPlan = async (
 
     console.log(subscription);
 
-    await await delay(30000);
+    await await delay(10000);
 
     let subInfo = await efiAPI.get(
       '/v1/subscription/' + subscription.subscription_id
