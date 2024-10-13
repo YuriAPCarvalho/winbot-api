@@ -15,17 +15,17 @@ const CreateInvoiceService = async (data: IInvoice): Promise<Invoices> => {
 
     var invoices = await FindAllInvoiceService(companyId);
 
-    let lastInvoice = invoices[invoices.length - 1];
-
-    let c: Date = new Date(lastInvoice.createdAt);
-    let due: Date = new Date(lastInvoice.dueDate);
-    let ehFreeTrial: boolean =
-      (due.getTime() - c.getTime()) / (1000 * 60 * 60 * 24) == 6;
-    //means the user is in your free trial
-    if (ehFreeTrial) {
-      await DeleteInvoice(invoices[0]?.id?.toString());
-      data.dueDate = newDueDate();
-    }
+    invoices.map(async (i: any) => {
+      let c: Date = new Date(i.createdAt);
+      let due: Date = new Date(i.dueDate);
+      let ehFreeTrial: boolean =
+        (due.getTime() - c.getTime()) / (1000 * 60 * 60 * 24) <= 7;
+      //means the user is in your free trial
+      if (ehFreeTrial) {
+        await DeleteInvoice(i.id?.toString());
+        data.dueDate = newDueDate();
+      }
+    });
 
     const record = await Invoices.create(data);
 

@@ -13,6 +13,7 @@ export interface IChargeInfo {
   zipcode?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  cardName?: string;
   cardNumber?: string;
   cardDate?: string;
   cardFlag?: string;

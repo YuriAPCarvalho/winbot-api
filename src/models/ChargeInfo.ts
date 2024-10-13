@@ -77,6 +77,10 @@ class ChargeInfo extends Model<ChargeInfo> {
 
   @AllowNull(true)
   @Column
+  cardName: string;
+
+  @AllowNull(true)
+  @Column
   cardFlag: string;
 
   @ForeignKey(() => Company)
