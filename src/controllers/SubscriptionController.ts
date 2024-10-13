@@ -121,41 +121,45 @@ export const createCardSubscriptionPlan = async (
 
   let i = 0;
   let actualStatus = '';
-  let subscription;
+  let subscription = null;
+
   do {
-    if (subscription) {
+    console.log({ ...body, ...itemsCheckout });
+
+    if (subscription != null) {
+      console.log('entrou' + subscription);
+
       await efiAPI
         .put(`/v1/subscription/${subscription.subscription_id}/cancel`)
         .then()
         .catch(() => {});
     }
 
-    itemsCheckout.items[0].value -= 1;
-
     const response = await efiAPI.post(
       `/v1/plan/${planID}/subscription/one-step`,
       { ...body, ...itemsCheckout }
     );
+
     subscription = response.data.data;
 
     console.log(subscription);
 
-    await await delay(10000);
+    await await delay(1000);
 
-    let subInfo = await efiAPI.get(
-      '/v1/subscription/' + subscription.subscription_id
-    );
-
-    console.log(subInfo);
-
-    actualStatus = subInfo.data.data.status;
+    actualStatus = subscription.status;
 
     console.log(actualStatus);
 
-    i++;
-  } while (actualStatus != 'active' && i <= 3);
+    itemsCheckout.items[0].value -= 1;
 
-  if (actualStatus == 'active') {
+    i++;
+  } while (
+    !actualStatus.includes('canceled') &&
+    !actualStatus.includes('active') &&
+    i <= 3
+  );
+
+  if (actualStatus.includes('active')) {
     await Promise.all([
       await updateChargeService({
         id: id,
