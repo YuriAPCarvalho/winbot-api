@@ -36,7 +36,7 @@ const CreateBankPlan = async (
   const gerencianet = Gerencianet(options);
 
   return await efiAPI
-    .post('/v1/plan', { name: name, repeats: 12, interval: termInMonths })
+    .post('/v1/plan', { name: name, repeats: null, interval: termInMonths })
     .then(async (response: any) => {
       console.log(response.data.data);
       return response.data.data.plan_id;
@@ -45,18 +45,6 @@ const CreateBankPlan = async (
       console.log(error);
       return error;
     });
-
-  // await gerencianet
-  //   .createPlan({}, { name: name, repeats: 12, interval: 1 })
-  //   .then((resposta: any) => {
-  //     console.log(resposta);
-  //     return resposta.data;
-  //   })
-  //   .catch((error: any) => {
-  //     console.log(error);
-  //     return error;
-  //   })
-  //   .done();
 };
 
 const CreatePlanService = async (planData: PlanData): Promise<Plan> => {

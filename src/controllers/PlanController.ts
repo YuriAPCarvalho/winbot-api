@@ -71,7 +71,8 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   const newPlan: StorePlanData = req.body;
 
   const schema = Yup.object().shape({
-    name: Yup.string().required()
+    name: Yup.string().required(),
+    term: Yup.string().required()
   });
 
   try {
