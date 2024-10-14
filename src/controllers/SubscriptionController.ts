@@ -109,7 +109,7 @@ export const createCardSubscriptionPlan = async (
           state
         },
         customer: {
-          cardName,
+          name: cardName,
           email,
           cpf,
           birth,
