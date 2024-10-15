@@ -13,6 +13,7 @@ import FindAllInvoiceService from '../services/InvoicesService/FindAllInvoiceSer
 import ListInvoicesServices from '../services/InvoicesService/ListInvoicesServices';
 import ShowInvoceService from '../services/InvoicesService/ShowInvoiceService';
 import UpdateInvoiceService from '../services/InvoicesService/UpdateInvoiceService';
+import { DeleteOpenInvoice } from '../services/InvoicesService/DeleteOpenInvoices';
 
 type IndexQuery = {
   searchParam: string;
@@ -57,6 +58,17 @@ export const list = async (req: Request, res: Response): Promise<Response> => {
   const invoice: Invoices[] = await FindAllInvoiceService(companyId);
 
   return res.status(200).json(invoice);
+};
+
+export const deleteOpenInvoices = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { companyId } = req.user;
+
+  await DeleteOpenInvoice(companyId);
+
+  return res.status(200);
 };
 
 export const update = async (

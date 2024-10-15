@@ -21,15 +21,13 @@ const CalcelLastInvoice = async (companyid: number): Promise<Invoice> => {
 
   let allInvoicesAgain = await FindAllInvoiceService(companyid);
 
-  if (allInvoicesAgain.some(i => i.status.includes('open'))) {
-    console.log('entrou pra cancelar');
+  allInvoicesAgain.map(async i => {
+    if (i.status.includes('open')) {
+      console.log(i);
 
-    allInvoicesAgain.map(async i => {
-      if (i.status === 'open') {
-        await DeleteInvoice(i?.id.toString());
-      }
-    });
-  }
+      await DeleteInvoice(i?.id.toString());
+    }
+  });
 
   if (!updatedInvoice) {
     throw new AppError('ERR_NO_PLAN_FOUND', 404);

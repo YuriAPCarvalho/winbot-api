@@ -287,32 +287,26 @@ export const cardUnsubscription = async (
   res: Response
 ): Promise<Response> => {
   const { id, companyId } = req.user;
-
-  await Promise.all([
-    DeleteByCompany(companyId.toString()),
-    UpdateCompanyService({ id: companyId, dueDate: new Date().toISOString() }),
-    CalcelLastInvoice(companyId)
-  ])
-    .then()
-    .catch(err => {
-      console.log(err);
-      throw err;
-    });
-
-  return await FindByCompany(companyId.toString())
-    .then(async res => {
+  try {
+    await FindByCompany(companyId.toString()).then(async res => {
       console.log(res);
 
       await efiAPI.put(
         `/v1/subscription/${res[res.length - 1]?.subscriptionID}/cancel`
       );
-    })
-    .then(() => {
-      return res.status(200).send('Plano cancelado com sucesso');
-    })
-    .catch(() => {
-      return res.status(400).send('Erro ao cancelar plano');
     });
+
+    await DeleteByCompany(companyId.toString());
+    await UpdateCompanyService({
+      id: companyId,
+      dueDate: new Date().toISOString()
+    });
+    await CalcelLastInvoice(companyId);
+
+    return res.status(200).send('Plano cancelado com sucesso');
+  } catch (err) {
+    return res.status(400).send('Erro ao cancelar plano');
+  }
 };
 
 export const createSubscription = async (
