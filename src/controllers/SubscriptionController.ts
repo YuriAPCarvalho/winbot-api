@@ -293,9 +293,7 @@ export const cardUnsubscription = async (
     UpdateCompanyService({ id: companyId, dueDate: new Date().toISOString() }),
     CalcelLastInvoice(companyId)
   ])
-    .then(response => {
-      return res.status(200).send('Plano cancelado com sucesso');
-    })
+    .then()
     .catch(err => {
       console.log(err);
       throw err;
