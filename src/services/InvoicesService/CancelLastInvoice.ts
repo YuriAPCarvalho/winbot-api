@@ -1,5 +1,6 @@
 import AppError from '../../errors/AppError';
 import Invoice from '../../models/Invoices';
+import { DeleteInvoice } from './DeleteInvoice';
 import FindAllInvoiceService from './FindAllInvoiceService';
 import UpdateInvoiceService from './UpdateInvoiceService';
 
@@ -17,6 +18,13 @@ const CalcelLastInvoice = async (companyid: number): Promise<Invoice> => {
     id: lastInvoice?.id,
     status: 'canceled'
   });
+
+  let allInvoicesAgain = await FindAllInvoiceService(companyid);
+
+  if (allInvoicesAgain.some(i => i.status == 'open')) {
+    let invoice = allInvoicesAgain.find(i => i.status == 'open');
+    DeleteInvoice(invoice?.id.toString());
+  }
 
   if (!updatedInvoice) {
     throw new AppError('ERR_NO_PLAN_FOUND', 404);
