@@ -65,7 +65,8 @@ export const createCardSubscriptionPlan = async (
   console.log(req.body);
 
   const {
-    planID,
+    bankPlanID,
+    planId,
     planName,
     planValue,
     payment_token,
@@ -126,7 +127,7 @@ export const createCardSubscriptionPlan = async (
   console.log({ ...body, ...itemsCheckout });
 
   const response = await efiAPI.post(
-    `/v1/plan/${planID}/subscription/one-step`,
+    `/v1/plan/${bankPlanID}/subscription/one-step`,
     { ...body, ...itemsCheckout }
   );
 
@@ -147,7 +148,11 @@ export const createCardSubscriptionPlan = async (
         tokenCard: payment_token,
         subscriptionID: subscription.subscription_id
       }),
-      UpdateCompanyService({ id: companyId, dueDate: newDueDate() }),
+      UpdateCompanyService({
+        id: companyId,
+        dueDate: newDueDate(),
+        planId: planId
+      }),
       CreateInvoiceService({
         detail: planName,
         status: 'paid',
@@ -166,7 +171,8 @@ export const upgradeSubscription = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const { companyId, bankPlanID, planName, planValue, dueDate } = req.body;
+  const { companyId, bankPlanID, planName, planValue, dueDate, planId } =
+    req.body;
 
   console.log(req.body);
   let invoices = await FindAllInvoiceService(companyId);
@@ -257,7 +263,11 @@ export const upgradeSubscription = async (
         id: chargeInfo.id,
         subscriptionID: subscription.subscription_id
       }),
-      UpdateCompanyService({ id: companyId, dueDate: newDueDate() }),
+      UpdateCompanyService({
+        id: companyId,
+        dueDate: newDueDate(),
+        planId: planId
+      }),
       CreateInvoiceService({
         detail: planName,
         status: 'paid',
