@@ -154,8 +154,8 @@ export const createCardSubscriptionPlan = async (
 
     i++;
   } while (
-    !actualStatus.includes('canceled') &&
-    !actualStatus.includes('active') &&
+    !actualStatus.includes('canceled') ||
+    !actualStatus.includes('active') ||
     i <= 3
   );
 
