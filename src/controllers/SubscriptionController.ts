@@ -133,11 +133,11 @@ export const createCardSubscriptionPlan = async (
 
   subscription = response.data.data;
 
-  actualStatus = subscription.status;
+  actualStatus = subscription?.charge?.status;
 
   console.log(actualStatus);
 
-  if (actualStatus.includes('active')) {
+  if (actualStatus.includes(process.env.STATUS_ESPERADO_EFICOBRANCA)) {
     await Promise.all([
       await updateChargeService({
         id: id,
@@ -253,11 +253,11 @@ export const upgradeSubscription = async (
 
   subscription = response.data.data;
 
-  actualStatus = subscription.status;
+  actualStatus = subscription?.charge?.status;
 
   console.log(actualStatus);
 
-  if (actualStatus.includes('active')) {
+  if (actualStatus.includes('waiting')) {
     await Promise.all([
       await updateChargeService({
         id: chargeInfo.id,
