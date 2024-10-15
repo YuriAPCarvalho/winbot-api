@@ -123,41 +123,18 @@ export const createCardSubscriptionPlan = async (
   let actualStatus = '';
   let subscription = null;
 
-  do {
-    console.log({ ...body, ...itemsCheckout });
+  console.log({ ...body, ...itemsCheckout });
 
-    if (subscription != null) {
-      console.log('entrou' + subscription);
-
-      await efiAPI
-        .put(`/v1/subscription/${subscription.subscription_id}/cancel`)
-        .then()
-        .catch(() => {});
-    }
-
-    const response = await efiAPI.post(
-      `/v1/plan/${planID}/subscription/one-step`,
-      { ...body, ...itemsCheckout }
-    );
-
-    subscription = response.data.data;
-
-    console.log(subscription);
-
-    await delay(1000);
-
-    actualStatus = subscription.status;
-
-    console.log(actualStatus);
-
-    itemsCheckout.items[0].value -= 1;
-
-    i++;
-  } while (
-    !actualStatus.includes('canceled') ||
-    !actualStatus.includes('active') ||
-    i <= 3
+  const response = await efiAPI.post(
+    `/v1/plan/${planID}/subscription/one-step`,
+    { ...body, ...itemsCheckout }
   );
+
+  subscription = response.data.data;
+
+  actualStatus = subscription.status;
+
+  console.log(actualStatus);
 
   if (actualStatus.includes('active')) {
     await Promise.all([
@@ -179,7 +156,7 @@ export const createCardSubscriptionPlan = async (
         companyId
       })
     ]);
-    return res.status(200);
+    return res.status(200).send('Operação concluída com sucesso!');
   } else {
     return res.status(400).send('Não foi possível completar a operação!');
   }
