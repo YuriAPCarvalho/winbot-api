@@ -276,7 +276,7 @@ export const upgradeSubscription = async (
         companyId
       })
     ]);
-    return res.status(200);
+    return res.status(200).send('Migração feita com sucesso!');
   } else {
     return res.status(400).send('Não foi possível completar a operação!');
   }
