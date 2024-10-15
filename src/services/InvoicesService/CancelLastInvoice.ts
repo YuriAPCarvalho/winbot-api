@@ -23,7 +23,7 @@ const CalcelLastInvoice = async (companyid: number): Promise<Invoice> => {
 
   if (allInvoicesAgain.some(i => i.status == 'open')) {
     let invoice = allInvoicesAgain.find(i => i.status == 'open');
-    DeleteInvoice(invoice?.id.toString());
+    await DeleteInvoice(invoice?.id.toString());
   }
 
   if (!updatedInvoice) {
