@@ -124,12 +124,14 @@ export const createCardSubscriptionPlan = async (
   let actualStatus = '';
   let subscription = null;
 
-  console.log({ ...body, ...itemsCheckout });
+  console.log({ body });
 
   const response = await efiAPI.post(
     `/v1/plan/${bankPlanID}/subscription/one-step`,
     { ...body, ...itemsCheckout }
   );
+
+  console.log(response);
 
   subscription = response.data.data;
 
@@ -137,7 +139,7 @@ export const createCardSubscriptionPlan = async (
 
   console.log(actualStatus);
 
-  if (actualStatus.includes(process.env.STATUS_ESPERADO_EFICOBRANCA)) {
+  if (process.env.STATUS_ESPERADO_EFICOBRANCA.includes(actualStatus)) {
     await Promise.all([
       await updateChargeService({
         id: id,
