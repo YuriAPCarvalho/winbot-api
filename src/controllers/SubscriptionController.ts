@@ -259,7 +259,7 @@ export const upgradeSubscription = async (
 
   console.log(actualStatus);
 
-  if (actualStatus.includes('waiting')) {
+  if (process.env.STATUS_ESPERADO_EFICOBRANCA.includes(actualStatus)) {
     await Promise.all([
       await updateChargeService({
         id: chargeInfo.id,
