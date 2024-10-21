@@ -92,7 +92,7 @@ export const createCardSubscriptionPlan = async (
     items: [
       {
         name: planName,
-        value: 400,
+        value: planValue,
         amount: 1
       }
     ]
@@ -207,7 +207,7 @@ export const upgradeSubscription = async (
     items: [
       {
         name: planName,
-        value: 400,
+        value: planValue,
         amount: 1
       }
     ]
