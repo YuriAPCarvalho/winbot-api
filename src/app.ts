@@ -29,7 +29,7 @@ app.use(bodyParser.json({ limit: '10mb' }));
 app.use(
   cors({
     credentials: true,
-    origin: 'http://154.38.180.13:3001'
+    origin: 'https://app.winbot.ai'
   })
 );
 app.use(cookieParser());
