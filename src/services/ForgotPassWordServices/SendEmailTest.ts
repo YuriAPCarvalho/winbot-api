@@ -25,7 +25,7 @@ const SendMail = async (email: string, tokenSenha: string) => {
   const userSmtp = process.env.MAIL_USER;
   const passwordSmpt = process.env.MAIL_PASS;
   const fromEmail = process.env.MAIL_FROM;
-  const urlSistema = `${process.env.FRONTEND_URL}:3001`;
+  const urlSistema = `${process.env.FRONTEND_URL}`;
 
   const transporter = nodemailer.createTransport({
     host: urlSmtp,
